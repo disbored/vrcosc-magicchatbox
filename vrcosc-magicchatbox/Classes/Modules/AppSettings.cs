@@ -11,7 +11,7 @@ namespace vrcosc_magicchatbox.Classes.Modules;
 public partial class AppSettings : VersionedSettings
 {
     public const double OscTickIntervalDefaultSeconds = 1.0;
-    public const double OscTickIntervalMinSeconds = 0.7;
+    public const double OscTickIntervalMinSeconds = 0.1;
     public const double OscTickIntervalMaxSeconds = 10.0;
     public const int OscTickIntervalDecimals = 1;
 
