@@ -3,19 +3,27 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using vrcosc_magicchatbox.Classes.DataAndSecurity;
+using vrcosc_magicchatbox.Classes.Modules;
+using vrcosc_magicchatbox.Classes.Modules.Media;
+using vrcosc_magicchatbox.ViewModels.State;
 using Windows.Media.Control;
 using static WindowsMediaController.MediaManager;
 
 namespace vrcosc_magicchatbox.ViewModels.Models
 {
     [DebuggerDisplay("{FriendlyAppName} - {TimePeekEnabled} - {TimePosition}/{CurrentTime}/{FullTime} live:{IsLiveTime}")]
-    public class MediaSessionInfo : INotifyPropertyChanged
+    public class MediaSessionInfo : INotifyPropertyChanged, IDisposable
     {
-        private bool _AutoSwitch = ViewModel.Instance.MediaSession_AutoSwitchSpawn;
+        private readonly MediaLinkSettings _mediaLinkSettings;
 
-        private Timer _updateTimer;
+        private readonly MediaLinkDisplayState _mediaLink;
+
+        private bool _AutoSwitch;
+
+        private bool _disposed;
+
+        public bool IsDisposed => _disposed;
 
         private bool _IsActive;
 
@@ -27,20 +35,64 @@ namespace vrcosc_magicchatbox.ViewModels.Models
 
         private bool _ShowTitle = true;
 
-        private void UpdateCurrentTime(object state)
+        public void RaiseTimeTick()
         {
-            if (PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+            if (_disposed)
+                return;
+
+            var handler = PropertyChanged;
+            if (handler != null)
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TimePosition)));
+                handler(this, new PropertyChangedEventArgs(nameof(CurrentTime)));
+                handler(this, new PropertyChangedEventArgs(nameof(TimePosition)));
             }
         }
 
         private bool _TimeoutRestore = false;
-        private MediaSession session;
+        // Every construction site sets Session via an object initializer right after `new`, so this is never read null.
+        private MediaSession session = null!;
 
-        public string AlbumArtist = "Album-Artist";
-        public string AlbumTitle = "Album-Title";
-        public string Artist = "Artist";
+        private string _albumArtist = "Album-Artist";
+        public string AlbumArtist
+        {
+            get => _albumArtist;
+            set
+            {
+                if (!string.Equals(_albumArtist, value, StringComparison.Ordinal))
+                {
+                    _albumArtist = value;
+                    NotifyPropertyChanged(nameof(AlbumArtist));
+                }
+            }
+        }
+
+        private string _albumTitle = "Album-Title";
+        public string AlbumTitle
+        {
+            get => _albumTitle;
+            set
+            {
+                if (!string.Equals(_albumTitle, value, StringComparison.Ordinal))
+                {
+                    _albumTitle = value;
+                    NotifyPropertyChanged(nameof(AlbumTitle));
+                }
+            }
+        }
+
+        private string _artist = "Artist";
+        public string Artist
+        {
+            get => _artist;
+            set
+            {
+                if (!string.Equals(_artist, value, StringComparison.Ordinal))
+                {
+                    _artist = value;
+                    NotifyPropertyChanged(nameof(Artist));
+                }
+            }
+        }
 
 
         private GlobalSystemMediaTransportControlsSessionPlaybackStatus _PlaybackStatus = GlobalSystemMediaTransportControlsSessionPlaybackStatus.Paused;
@@ -49,8 +101,12 @@ namespace vrcosc_magicchatbox.ViewModels.Models
             get { return _PlaybackStatus; }
             set
             {
+                if (_PlaybackStatus == value)
+                    return;
+
                 _PlaybackStatus = value;
-                _lastUpdateTime = DateTime.Now;
+
+                _lastUpdateTime = DateTime.UtcNow;
                 NotifyPropertyChanged(nameof(PlaybackStatus));
                 NotifyPropertyChanged(nameof(PlayingNow));
             }
@@ -63,46 +119,61 @@ namespace vrcosc_magicchatbox.ViewModels.Models
 
         }
 
-        public string Title = "Title";
+        private string _title = "Title";
+        public string Title
+        {
+            get => _title;
+            set
+            {
+                if (!string.Equals(_title, value, StringComparison.Ordinal))
+                {
+                    _title = value;
+                    NotifyPropertyChanged(nameof(Title));
+                }
+            }
+        }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         private void SaveOrDeleteSettings()
         {
-            if (_KeepSaved)
+            lock (MediaSessionSettings.SavedSessionsLock)
             {
-                var savedSettings = ViewModel.Instance.SavedSessionSettings
-                    .FirstOrDefault(s => s.SessionId == Session.Id);
-                if (savedSettings != null)
+                if (_KeepSaved)
                 {
-                    savedSettings.ShowTitle = _ShowTitle;
-                    savedSettings.AutoSwitch = _AutoSwitch;
-                    savedSettings.ShowArtist = _ShowArtist;
-                    savedSettings.IsVideo = _IsVideo;
-                    savedSettings.KeepSaved = _KeepSaved;
+                    var savedSettings = _mediaLink.SavedSessionSettings
+                        .FirstOrDefault(s => s.SessionId == Session.Id);
+                    if (savedSettings != null)
+                    {
+                        savedSettings.ShowTitle = _ShowTitle;
+                        savedSettings.AutoSwitch = _AutoSwitch;
+                        savedSettings.ShowArtist = _ShowArtist;
+                        savedSettings.IsVideo = _IsVideo;
+                        savedSettings.KeepSaved = _KeepSaved;
+                    }
+                    else
+                    {
+                        _mediaLink.SavedSessionSettings
+                            .Add(
+                                new MediaSessionSettings
+                                {
+                                    SessionId = Session.Id,
+                                    ShowTitle = _ShowTitle,
+                                    AutoSwitch = _AutoSwitch,
+                                    ShowArtist = _ShowArtist,
+                                    IsVideo = _IsVideo,
+                                    KeepSaved = _KeepSaved
+                                });
+                    }
                 }
                 else
                 {
-                    ViewModel.Instance.SavedSessionSettings
-                        .Add(
-                            new MediaSessionSettings
-                            {
-                                SessionId = Session.Id,
-                                ShowTitle = _ShowTitle,
-                                AutoSwitch = _AutoSwitch,
-                                ShowArtist = _ShowArtist,
-                                IsVideo = _IsVideo,
-                                KeepSaved = _KeepSaved
-                            });
-                }
-            }
-            else
-            {
-                var savedSettings = ViewModel.Instance.SavedSessionSettings
-                    .FirstOrDefault(s => s.SessionId == Session.Id);
-                if (savedSettings != null)
-                {
-                    ViewModel.Instance.SavedSessionSettings.Remove(savedSettings);
+                    var savedSettings = _mediaLink.SavedSessionSettings
+                        .FirstOrDefault(s => s.SessionId == Session.Id);
+                    if (savedSettings != null)
+                    {
+                        _mediaLink.SavedSessionSettings.Remove(savedSettings);
+                    }
                 }
             }
         }
@@ -115,24 +186,26 @@ namespace vrcosc_magicchatbox.ViewModels.Models
                 if (!id.Contains('.') && !id.Contains('!') && char.IsUpper(id[0]))
                 {
                     FriendlyAppName = id;
+                    return;
                 }
-                else
-                {
-                    if (id.Contains('!'))
-                    {
-                        id = id.Split('!')[1];
-                    }
 
-                    if (id.Contains(".exe"))
-                    {
-                        id = Path.GetFileNameWithoutExtension(id);
-                    }             
-                    if(id.Contains("OperaSoftware"))
-                    {
-                        FriendlyAppName = "Opera";
-                    }
-                    FriendlyAppName = id;
+                if (id.Contains('!'))
+                {
+                    id = id.Split('!')[1];
                 }
+
+                if (id.Contains(".exe"))
+                {
+                    id = Path.GetFileNameWithoutExtension(id);
+                }
+
+                if (id.Contains("OperaSoftware"))
+                {
+                    FriendlyAppName = "Opera";
+                    return;
+                }
+
+                FriendlyAppName = id;
             }
             catch (Exception ex)
             {
@@ -155,7 +228,8 @@ namespace vrcosc_magicchatbox.ViewModels.Models
             }
         }
 
-        public string FriendlyAppName { get; private set; }
+        // Derived from Session in the Session setter, which every construction site calls right after `new`.
+        public string FriendlyAppName { get; private set; } = null!;
 
         public bool IsActive
         {
@@ -179,6 +253,7 @@ namespace vrcosc_magicchatbox.ViewModels.Models
         }
 
         private bool _TimePeekEnabled = false;
+        private bool _IsTimelineStale;
 
         public bool TimePeekEnabled
         {
@@ -193,6 +268,57 @@ namespace vrcosc_magicchatbox.ViewModels.Models
             }
         }
 
+        public bool IsTimelineStale
+        {
+            get { return _IsTimelineStale; }
+            private set
+            {
+                if (_IsTimelineStale != value)
+                {
+                    _IsTimelineStale = value;
+                    NotifyPropertyChanged(nameof(IsTimelineStale));
+                }
+            }
+        }
+
+        private DateTime? _timelineStaleSinceUtc;
+
+        public TimeSpan TimelineStaleAge
+            => _timelineStaleSinceUtc is { } since
+                ? DateTime.UtcNow - since
+                : TimeSpan.Zero;
+
+        public bool HasNoTimeline { get; private set; }
+
+        public void MarkTimelineStale(bool restartStaleClock = false)
+        {
+            if (restartStaleClock)
+                _timelineStaleSinceUtc = DateTime.UtcNow;
+            else
+                _timelineStaleSinceUtc ??= DateTime.UtcNow;
+
+            IsTimelineStale = true;
+            HasNoTimeline = false;
+            TimePeekEnabled = false;
+            NotifyPropertyChanged(nameof(TimePosition));
+        }
+
+        public void MarkTimelineDurationless()
+        {
+            _timelineStaleSinceUtc = null;
+            IsTimelineStale = false;
+            HasNoTimeline = true;
+            TimePeekEnabled = false;
+            NotifyPropertyChanged(nameof(TimePosition));
+        }
+
+        public void MarkTimelineFresh()
+        {
+            _timelineStaleSinceUtc = null;
+            IsTimelineStale = false;
+            HasNoTimeline = false;
+        }
+
         private DateTime _lastUpdateTime;
 
 
@@ -204,8 +330,17 @@ namespace vrcosc_magicchatbox.ViewModels.Models
         {
             get
             {
-                if (FullTime.TotalMilliseconds == 0) return 0;
-                return (int)(CurrentTime.TotalMilliseconds / FullTime.TotalMilliseconds * 100);
+                double fullMilliseconds = FullTime.TotalMilliseconds;
+                double currentMilliseconds = CurrentTime.TotalMilliseconds;
+
+                if (fullMilliseconds <= 0 || double.IsNaN(fullMilliseconds) || double.IsInfinity(fullMilliseconds))
+                    return 0;
+
+                if (double.IsNaN(currentMilliseconds) || double.IsInfinity(currentMilliseconds))
+                    return 0;
+
+                double percent = currentMilliseconds / fullMilliseconds * 100;
+                return (int)Math.Clamp(percent, 0, 100);
             }
         }
 
@@ -213,29 +348,44 @@ namespace vrcosc_magicchatbox.ViewModels.Models
 
         private TimeSpan _CurrentTime = new TimeSpan(0, 0, 0);
 
+        public TimeSpan StoredCurrentTime => _CurrentTime;
+
         public TimeSpan CurrentTime
         {
             get
             {
-                if (PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+                if (PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
+                    && _FullTime > TimeSpan.Zero)
                 {
-                    var elapsedTime = DateTime.Now - _lastUpdateTime;
-                    return _CurrentTime + elapsedTime;
+                    var elapsedTime = DateTime.UtcNow - _lastUpdateTime;
+                    if (elapsedTime < TimeSpan.Zero)
+                        elapsedTime = TimeSpan.Zero;
+
+                    TimeSpan livePosition = _CurrentTime + elapsedTime;
+                    if (livePosition > _FullTime)
+                        return _FullTime;
+
+                    return livePosition;
                 }
                 return _CurrentTime;
             }
-            set
-            {
-                _CurrentTime = value;
-                _lastUpdateTime = DateTime.Now;
-                NotifyPropertyChanged(nameof(CurrentTime));
-                NotifyPropertyChanged(nameof(TimePosition));
-            }
+            set => SetPositionFromSample(value, DateTime.UtcNow);
         }
 
-        public MediaSessionInfo()
+        public void SetPositionFromSample(TimeSpan position, DateTime sampledAtUtc)
         {
-            _updateTimer = new Timer(UpdateCurrentTime, null, 0, 1000); 
+            _CurrentTime = position;
+            _lastUpdateTime = MediaTimelinePolicy.ResolveAnchor(sampledAtUtc, DateTime.UtcNow);
+            NotifyPropertyChanged(nameof(CurrentTime));
+            NotifyPropertyChanged(nameof(TimePosition));
+        }
+
+        public MediaSessionInfo(MediaLinkSettings mediaLinkSettings, MediaLinkDisplayState mediaLink)
+        {
+            _mediaLinkSettings = mediaLinkSettings;
+            _mediaLink = mediaLink;
+            _AutoSwitch = _mediaLinkSettings.AutoSwitchSpawn;
+            _lastUpdateTime = DateTime.UtcNow;
         }
 
         private TimeSpan _FullTime = new TimeSpan(0, 0, 0);
@@ -307,18 +457,26 @@ namespace vrcosc_magicchatbox.ViewModels.Models
             }
         }
 
-        
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+        }
+
+
     }
 
     public class MediaSessionSettings
     {
+        public static readonly object SavedSessionsLock = new object();
+
         public bool AutoSwitch { get; set; }
 
         public bool IsVideo { get; set; }
 
         public bool KeepSaved { get; set; }
 
-        public string SessionId { get; set; }
+        public string? SessionId { get; set; }
 
         public bool ShowArtist { get; set; }
 

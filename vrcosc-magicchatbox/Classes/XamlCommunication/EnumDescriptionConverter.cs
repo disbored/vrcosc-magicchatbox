@@ -1,23 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace vrcosc_magicchatbox.Classes
 {
     public class EnumDescriptionConverter : IValueConverter
     {
+        // A binding re-runs its converter whenever its source changes. Reflecting for the same attribute
+        // every time is pure repeat work, so each enum value is resolved once and remembered.
+        private static readonly ConcurrentDictionary<object, string> Descriptions = new();
+
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null) return string.Empty;
 
-            var enumValue = value.GetType().GetField(value.ToString());
-            var attribute = (DescriptionAttribute)enumValue.GetCustomAttributes(typeof(DescriptionAttribute), false)[0];
-            return attribute.Description;
+            return Descriptions.GetOrAdd(value, static v =>
+            {
+                string name = v.ToString() ?? string.Empty;
+
+                var field = v.GetType().GetField(name);
+                if (field == null) return name;
+
+                var attributes = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                return attributes.Length > 0 && attributes[0] is DescriptionAttribute attribute
+                    ? attribute.Description
+                    : name;
+            });
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

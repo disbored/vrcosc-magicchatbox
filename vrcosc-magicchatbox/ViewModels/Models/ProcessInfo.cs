@@ -5,19 +5,22 @@ namespace vrcosc_magicchatbox.ViewModels
     public class ProcessInfo : INotifyPropertyChanged
     {
         private bool _applyCustomAppName;
-        private string _customAppName;
+        private string _customAppName = string.Empty;
         private int _focusCount;
         private bool _isPrivateApp;
 
 
         private string? _lastTitle = "";
-        private string _processName;
+        private string _processName = string.Empty;
 
 
         private bool _ShowTitle = false;
         private bool _usedNewMethod;
-
-        public event PropertyChangedEventHandler PropertyChanged;
+        private bool _useCustomRegex;
+        private string _customRegex = string.Empty;
+        private string _contentFilter = string.Empty;
+        private int _contentFilterMode;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         private void NotifyPropertyChanged(string propertyName)
         { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); }
@@ -102,5 +105,52 @@ namespace vrcosc_magicchatbox.ViewModels
                 NotifyPropertyChanged(nameof(UsedNewMethod));
             }
         }
+
+        public bool UseCustomRegex
+        {
+            get { return _useCustomRegex; }
+            set
+            {
+                _useCustomRegex = value;
+                NotifyPropertyChanged(nameof(UseCustomRegex));
+            }
+        }
+
+        public string CustomRegex
+        {
+            get { return _customRegex; }
+            set
+            {
+                _customRegex = value;
+                NotifyPropertyChanged(nameof(CustomRegex));
+            }
+        }
+
+        public string ContentFilter
+        {
+            get { return _contentFilter; }
+            set
+            {
+                _contentFilter = value ?? string.Empty;
+                NotifyPropertyChanged(nameof(ContentFilter));
+                NotifyPropertyChanged(nameof(HasContentFilter));
+            }
+        }
+
+        public int ContentFilterMode
+        {
+            get { return _contentFilterMode; }
+            set
+            {
+                _contentFilterMode = value;
+                NotifyPropertyChanged(nameof(ContentFilterMode));
+                NotifyPropertyChanged(nameof(HasContentFilter));
+                NotifyPropertyChanged(nameof(ContentFilterEnabled));
+            }
+        }
+
+        public bool ContentFilterEnabled => _contentFilterMode != 0;
+
+        public bool HasContentFilter => _contentFilterMode != 0 && !string.IsNullOrWhiteSpace(_contentFilter);
     }
 }

@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Data;
 using System.Windows;
+using System.Windows.Data;
 
 namespace vrcosc_magicchatbox.Classes
 {
@@ -15,9 +11,7 @@ namespace vrcosc_magicchatbox.Classes
         {
             if (value is double actualWidth)
             {
-                double subtractedWidth = 50; // Adjust this value as necessary.
-
-                // Ensure the returned width is never negative.
+                double subtractedWidth = 50;
                 double resultWidth = actualWidth - subtractedWidth;
                 return resultWidth > 0 ? resultWidth : 0;
             }

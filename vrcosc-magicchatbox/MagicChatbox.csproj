@@ -2,18 +2,28 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-	<Version>0.9.075</Version>
-    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+	<Version>0.9.226</Version>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <RootNamespace>vrcosc_magicchatbox</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>True</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
     <Configurations>Debug;Release;Beta</Configurations>
     <DebugType>portable</DebugType>
     <ApplicationIcon>Img\MagicOSC_icon.ico</ApplicationIcon>
-    <TargetFrameworks></TargetFrameworks>
     <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <StartupObject>vrcosc_magicchatbox.App</StartupObject>
     <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
+    <Product>MagicChatbox</Product>
+    <AssemblyTitle>MagicChatbox</AssemblyTitle>
+    <Description>Your VRChat chatbox, but alive. Show your music, lyrics, heart rate, world and PC stats in VRChat over OSC.</Description>
+    <Company>MagicChatbox</Company>
+    <Authors>BoiHanny</Authors>
+    <Copyright>Copyright © BoiHanny</Copyright>
+    <RepositoryUrl>https://github.com/BoiHanny/vrcosc-magicchatbox</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -21,6 +31,20 @@
 		<WarningLevel>4</WarningLevel>
 		<DebugType>none</DebugType>
 		<Prefer32Bit>false</Prefer32Bit>
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+		<AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PublishReadyToRun>true</PublishReadyToRun>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PublishReadyToRunExclude Include="SixLabors.ImageSharp.dll" />
+	</ItemGroup>
+
+	<PropertyGroup>		
+		<MvvmToolkitEnableINotifyPropertyChangingSupport>false</MvvmToolkitEnableINotifyPropertyChangingSupport>
 	</PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -36,7 +60,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Img\Hellowwweeeeen.png" />
+    <AssemblyMetadata
+      Include="VoicemodClientKey"
+      Value="$(VoicemodClientKey)"
+      Condition="'$(VoicemodClientKey)' != ''" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Img\Icons\Accept_ico.png" />
     <None Remove="Img\Icons\ActivatedStatus_ico.png" />
     <None Remove="Img\Icons\ActivateStatus_ico.png" />
@@ -48,14 +78,12 @@
     <None Remove="Img\Icons\Copy_ico.png" />
     <None Remove="Img\Icons\Cross_ico.png" />
     <None Remove="Img\Icons\Cross_v1_ico.png" />
-    <None Remove="Img\Icons\csharp-bot.png" />
     <None Remove="Img\Icons\Cut_ico.png" />
     <None Remove="Img\Icons\Delete_ico.png" />
     <None Remove="Img\Icons\Discord.png" />
-    <None Remove="Img\Icons\DOTNET.png" />
+    <None Remove="Img\Icons\Discord_ico.png" />
     <None Remove="Img\Icons\downgrade.png" />
     <None Remove="Img\Icons\Edit_ico.png" />
-    <None Remove="Img\Icons\error.png" />
     <None Remove="Img\Icons\Favorite_ico.png" />
     <None Remove="Img\Icons\GitHub.png" />
     <None Remove="Img\Icons\HeartRate_ico.png" />
@@ -84,11 +112,18 @@
     <None Remove="Img\Icons\spotify_ico.png" />
     <None Remove="Img\Icons\subtract_ico.png" />
     <None Remove="Img\Icons\SystemTime_ico.png" />
+    <None Remove="Img\Icons\TikTok_ico.png" />
     <None Remove="Img\Icons\Translate_ico.png" />
+    <None Remove="Img\Icons\Twitch_ico.png" />
     <None Remove="Img\Icons\Unfavorite_ico.png" />
     <None Remove="Img\Icons\Upload.png" />
+    <None Remove="Img\Icons\vr-performance.png" />
+    <None Remove="Img\Icons\VRCRadar_ico.png" />
+    <None Remove="Img\Icons\VR_bat_ico.png" />
     <None Remove="Img\Icons\Wand_ico.png" />
+    <None Remove="Img\Icons\Weather_ico.png" />
     <None Remove="Img\Icons\WindowActivity_ico.png" />
+    <None Remove="Img\Icons\Voicemod.png" />
     <None Remove="Img\Icons\yes.png" />
     <None Remove="Img\MagicOSC_icon.png" />
     <None Remove="Json\voices.json" />
@@ -98,7 +133,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Img\Hellowwweeeeen.png" />
+    <Resource Include="Fonts\Albert.ttf" />
+    <Resource Include="Fonts\Comfortaa.ttf" />
     <Resource Include="Img\Icons\Accept_ico.png" />
     <Resource Include="Img\Icons\ActivatedStatus_ico.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
@@ -116,16 +152,14 @@
     <Resource Include="Img\Icons\Copy_ico.png" />
     <Resource Include="Img\Icons\Cross_ico.png" />
     <Resource Include="Img\Icons\Cross_v1_ico.png" />
-    <Resource Include="Img\Icons\csharp-bot.png" />
     <Resource Include="Img\Icons\Cut_ico.png" />
     <Resource Include="Img\Icons\Delete_ico.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
     <Resource Include="Img\Icons\Discord.png" />
-    <Resource Include="Img\Icons\DOTNET.png" />
+    <Resource Include="Img\Icons\Discord_ico.png" />
     <Resource Include="Img\Icons\downgrade.png" />
     <Resource Include="Img\Icons\Edit_ico.png" />
-    <Resource Include="Img\Icons\error.png" />
     <Resource Include="Img\Icons\Favorite_ico.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
@@ -162,15 +196,22 @@
     <Resource Include="Img\Icons\SystemTime_ico.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Img\Icons\TikTok_ico.png" />
     <Resource Include="Img\Icons\Translate_ico.png" />
+    <Resource Include="Img\Icons\Twitch_ico.png" />
     <Resource Include="Img\Icons\Unfavorite_ico.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
     <Resource Include="Img\Icons\Upload.png" />
+    <Resource Include="Img\Icons\vr-performance.png" />
+    <Resource Include="Img\Icons\VRCRadar_ico.png" />
+    <Resource Include="Img\Icons\VR_bat_ico.png" />
     <Resource Include="Img\Icons\Wand_ico.png" />
+    <Resource Include="Img\Icons\Weather_ico.png" />
     <Resource Include="Img\Icons\WindowActivity_ico.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Img\Icons\Voicemod.png" />
     <Resource Include="Img\Icons\yes.png" />
     <Resource Include="Img\MagicOSC_icon.png" />
     <Resource Include="Img\Icons\NetworkStats_ico.png" />
@@ -183,6 +224,11 @@
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="libs\openvr_api.dll">
+      <Link>openvr_api.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <Content Include="Json\voices.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -190,17 +236,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Dubya.WindowsMediaController" Version="2.5.5" />
-    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.5-pre392" />
-    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NHotkey.Wpf" Version="3.0.0" />
-    <PackageReference Include="NLog" Version="5.4.0" />
-	  <PackageReference Include="OpenAI-DotNet" Version="8.6.1" />
-	  <PackageReference Include="System.Management" Version="10.0.0-preview.1.25080.5" />
-	  <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
+    <PackageReference Include="Dubya.WindowsMediaController" Version="2.5.6" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.142" />
+    <PackageReference Include="NAudio" Version="3.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="NHotkey.Wpf" Version="4.0.0" />
+    <PackageReference Include="NLog" Version="6.2.0" />
+	  <PackageReference Include="OpenAI" Version="2.13.0" />
+	  <PackageReference Include="System.Management" Version="10.0.11" />
+    <PackageReference Include="TwitchLib.Api" Version="3.10.2" />
+    <PackageReference Include="OpenVR.NET" Version="0.8.5" />
+	<PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
+    <PackageReference Include="TikTokLive_Sharp" Version="1.2.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>
@@ -230,6 +283,9 @@
     <Compile Update="UI\Dialogs\OpenAIAuth.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="UI\Dialogs\TwitchAuth.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -251,5 +307,15 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+
+  <!-- Transitive dependencies drag in Unix syscall shims that a Windows-only build can never load.
+       Shipping unreachable native code only widens the surface a scanner has to judge. -->
+  <Target Name="RemoveUnixInteropShims" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish
+        Remove="@(ResolvedFileToPublish)"
+        Condition="'%(Filename)' == 'MonoPosixHelper' or '%(Filename)' == 'libMonoPosixHelper'" />
+    </ItemGroup>
+  </Target>
 
 </Project>

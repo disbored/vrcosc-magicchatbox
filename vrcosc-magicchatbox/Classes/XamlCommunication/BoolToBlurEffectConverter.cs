@@ -1,22 +1,29 @@
-﻿
-
+using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media.Effects;
-using System;
 
 namespace vrcosc_magicchatbox.Classes
 {
     public class BoolToBlurEffectConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        private static readonly BlurEffect Blurred = CreateBlurred();
+
+        private static BlurEffect CreateBlurred()
+        {
+            var effect = new BlurEffect { Radius = 5 };
+            effect.Freeze();
+            return effect;
+        }
+
+        public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool isLiveTime && !isLiveTime)
             {
-                return new BlurEffect { Radius = 5 };
+                return Blurred;
             }
 
-            return new BlurEffect { Radius = 0 };  // No blur effect when IsLiveTime is true
+            return null;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

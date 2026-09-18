@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace vrcosc_magicchatbox.Classes
@@ -12,8 +8,11 @@ namespace vrcosc_magicchatbox.Classes
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            int characterCount = (int)value;
-            return characterCount > 140;
+            if (value is int characterCount)
+            {
+                return characterCount > 140;
+            }
+            return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

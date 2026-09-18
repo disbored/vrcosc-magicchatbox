@@ -1,0 +1,572 @@
+﻿<UserControl
+    x:Class="vrcosc_magicchatbox.UI.Pages.Options.AppOptionsSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:vrcosc_magicchatbox.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:modules="clr-namespace:vrcosc_magicchatbox.Classes.Modules"
+    xmlns:sections="clr-namespace:vrcosc_magicchatbox.ViewModels.Sections"
+    d:DataContext="{d:DesignInstance Type=sections:AppOptionsSectionViewModel,
+                                     IsDesignTimeCreatable=False}"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MagicChatbox;component/UI/Resources/SharedConverters.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="0,5,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.Background>
+            <LinearGradientBrush SpreadMethod="Pad" StartPoint="1,1" EndPoint="0,0">
+                <GradientStop Color="{StaticResource SurfaceGradientStartColor}" />
+                <GradientStop Offset="1" Color="{StaticResource SurfaceGradientEndColor}" />
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Grid Grid.Row="0">
+            <ToggleButton
+                Width="Auto"
+                Height="30"
+                HorizontalAlignment="Left"
+                IsChecked="{Binding AppSettings.Settings_AppOptions, Mode=TwoWay}"
+                Style="{StaticResource ExpandCollapseToggleButtonStyle}"
+                Tag="App options"
+                TextOptions.TextRenderingMode="ClearType" />
+        </Grid>
+        <Grid
+            Grid.Row="1"
+            Height="Auto"
+            Margin="34,10,0,0"
+            Visibility="{Binding AppSettings.Settings_AppOptions, Converter={StaticResource InverseBoolToHiddenConverter}, UpdateSourceTrigger=PropertyChanged}">
+            <StackPanel>
+
+                <!--  Appearance and performance  -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Appearance and performance" />
+                        <CheckBox x:Name="ReducedVisuals_checkbox" IsChecked="{Binding AppSettings.ReducedVisuals, Mode=TwoWay}">
+                            Reduced visuals
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}">
+                            Turns off the shadows, the fades and the page transitions. Measured here it takes the
+                            window from around 19% of the graphics card down to under 3%.
+                        </TextBlock>
+                        <CheckBox x:Name="ReducedVisualsInVr_checkbox" IsChecked="{Binding AppSettings.ReducedVisualsInVr, Mode=TwoWay}">
+                            Turn it on by itself while VR is running
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}">
+                            VR is when the graphics card is busiest and when you are least likely to be looking at
+                            this window.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!--  Window and tray  -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Window and tray" />
+                        <CheckBox x:Name="StartInBackground_checkbox" IsChecked="{Binding AppSettings.StartInBackground, Mode=TwoWay}">
+                            Start hidden in the tray
+                        </CheckBox>
+                        <CheckBox x:Name="CloseToTray_checkbox" IsChecked="{Binding AppSettings.CloseToTray, Mode=TwoWay}">
+                            Keep running when you close the window
+                        </CheckBox>
+                        <CheckBox x:Name="MinimizeToTray_checkbox" IsChecked="{Binding AppSettings.MinimizeToTrayOnMinimize, Mode=TwoWay}">
+                            Hide to the tray when you minimise
+                        </CheckBox>
+                        <CheckBox x:Name="TrayNotifications_checkbox" IsChecked="{Binding AppSettings.EnableTrayNotifications, Mode=TwoWay}">
+                            Show tray notifications while you are in another window
+                        </CheckBox>
+                        <CheckBox x:Name="ShowTrayRunningReminder_checkbox" IsChecked="{Binding AppSettings.ShowTrayRunningReminder, Mode=TwoWay}">
+                            Remind me that MagicChatbox is still running
+                        </CheckBox>
+                        <CheckBox x:Name="OpenTrayWithAltX_checkbox" IsChecked="{Binding AppSettings.OpenTrayWithAltX, Mode=TwoWay}">
+                            Open the tray menu with Alt+X
+                        </CheckBox>
+                        <CheckBox x:Name="HiddenIntegrationWarning_checkbox" IsChecked="{Binding AppSettings.ShowHiddenIntegrationWarning, Mode=TwoWay}">
+                            Warn me when something is on but not shown in the mode I am in
+                        </CheckBox>
+                        <TextBlock
+                            Margin="2,6,20,4"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="Closing the window normally exits MagicChatbox, and the chatbox output stops with it. Turn on &quot;keep running&quot; to leave it working in the tray instead. The two tray options are independent, so set both if you want the window to end up in the same place either way." />
+                        <CheckBox x:Name="WindowOnTop_checkbox" IsChecked="{Binding AppSettings.Topmost, Mode=TwoWay}">
+                            Keep the window in front of other windows
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
+
+                <!--  Where the chatbox text is sent  -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Where the text is sent" />
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="VRChat listens on this PC at 127.0.0.1, port 9000. Only change these if VRChat runs on another computer, or if something else on this PC has taken the port." />
+
+                        <TextBlock
+                            Margin="2,8,0,5"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Address" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox
+                                x:Name="OSCIPBox"
+                                Width="100"
+                                Padding="5,0,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalContentAlignment="Center"
+                                FontSize="{StaticResource FontSizeBody}"
+                                Text="{Binding OscSettings.OscIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button
+                                x:Name="ResetIP_btn"
+                                Width="auto"
+                                Margin="5,0,0,0"
+                                Padding="5"
+                                Command="{Binding ResetOscIpCommand}"
+                                Style="{StaticResource Status_Button_style}">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image
+                                                Width="15"
+                                                Height="15"
+                                                Margin="0,0,3,0"
+                                                RenderOptions.BitmapScalingMode="HighQuality"
+                                                Source="/Img/Icons/Load_ico.png" />
+                                            <TextBlock
+                                                Margin="0,-1,5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="{StaticResource FontSizeCompact}"
+                                                FontWeight="SemiBold"
+                                                Foreground="{StaticResource TextSubtlePurpleBrush}"
+                                                Text="Default" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
+                        </StackPanel>
+
+                        <TextBlock
+                            Margin="2,12,0,5"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Port" />
+                        <StackPanel Margin="0,0,0,10" Orientation="Horizontal">
+                            <TextBox
+                                x:Name="OSCPortOut"
+                                Width="100"
+                                Padding="5,0,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalContentAlignment="Center"
+                                FontSize="{StaticResource FontSizeBody}"
+                                Text="{Binding OscSettings.OscPortOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button
+                                x:Name="ResetOSCPortOut_btn"
+                                Width="auto"
+                                Margin="5,0,0,0"
+                                Padding="5"
+                                Command="{Binding ResetOscPortCommand}"
+                                Style="{StaticResource Status_Button_style}">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image
+                                                Width="15"
+                                                Height="15"
+                                                Margin="0,0,3,0"
+                                                RenderOptions.BitmapScalingMode="HighQuality"
+                                                Source="/Img/Icons/Load_ico.png" />
+                                            <TextBlock
+                                                Margin="0,-1,5,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="{StaticResource FontSizeCompact}"
+                                                FontWeight="SemiBold"
+                                                Foreground="{StaticResource TextSubtlePurpleBrush}"
+                                                Text="Default" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
+                        </StackPanel>
+
+                        <CheckBox x:Name="UnmuteMainOutput_checkbox" IsChecked="{Binding OscSettings.UnmuteMainOutput, Mode=TwoWay}">
+                            Let MagicChatbox mute and unmute your VRChat microphone
+                        </CheckBox>
+
+                        <CheckBox
+                            x:Name="SecOSC_checkbox"
+                            Margin="0,8,0,0"
+                            IsChecked="{Binding OscSettings.SecOSC, Mode=TwoWay}">
+                            Send the same text somewhere else as well
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="For a second copy of VRChat, another PC on your network, or a tool that reads OSC." />
+                        <Border
+                            Margin="0,0,0,15"
+                            Style="{StaticResource OptionCardStyle}"
+                            Visibility="{Binding OscSettings.SecOSC, Converter={StaticResource InverseBoolToHiddenConverter}, UpdateSourceTrigger=PropertyChanged}">
+                            <StackPanel Margin="5">
+                                <TextBlock
+                                    Margin="2,8,0,5"
+                                    HorizontalAlignment="Left"
+                                    Style="{StaticResource OptionFieldLabelStyle}"
+                                    Text="Address" />
+                                <TextBox
+                                    x:Name="SecOSCIP"
+                                    Width="100"
+                                    Margin="0,3,0,5"
+                                    Padding="5,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding OscSettings.SecOSCIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock
+                                    Margin="2,8,0,5"
+                                    HorizontalAlignment="Left"
+                                    Style="{StaticResource OptionFieldLabelStyle}"
+                                    Text="Port" />
+                                <TextBox
+                                    x:Name="SecOSCPort"
+                                    Width="100"
+                                    Margin="0,3,0,0"
+                                    Padding="5,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding OscSettings.SecOSCPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <CheckBox
+                                    x:Name="ToggleVoiceSec"
+                                    Margin="0,6,0,0"
+                                    IsChecked="{Binding OscSettings.UnmuteSecOutput, Mode=TwoWay}">
+                                    Mute and unmute the microphone here too
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
+
+                        <CheckBox x:Name="ThirdOSC_checkbox" IsChecked="{Binding OscSettings.ThirdOSC, Mode=TwoWay}">
+                            And to a third place
+                        </CheckBox>
+                        <Border
+                            Margin="0,0,0,15"
+                            Style="{StaticResource OptionCardStyle}"
+                            Visibility="{Binding OscSettings.ThirdOSC, Converter={StaticResource InverseBoolToHiddenConverter}, UpdateSourceTrigger=PropertyChanged}">
+                            <StackPanel Margin="5">
+                                <TextBlock
+                                    Margin="2,8,0,5"
+                                    HorizontalAlignment="Left"
+                                    Style="{StaticResource OptionFieldLabelStyle}"
+                                    Text="Address" />
+                                <TextBox
+                                    x:Name="ThirdOSCIP"
+                                    Width="100"
+                                    Margin="0,3,0,5"
+                                    Padding="5,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding OscSettings.ThirdOSCIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock
+                                    Margin="2,8,0,5"
+                                    HorizontalAlignment="Left"
+                                    Style="{StaticResource OptionFieldLabelStyle}"
+                                    Text="Port" />
+                                <TextBox
+                                    x:Name="ThirdOSCPort"
+                                    Width="100"
+                                    Margin="0,3,0,0"
+                                    Padding="5,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding OscSettings.ThirdOSCPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <CheckBox
+                                    x:Name="ToggleVoiceThird"
+                                    Margin="0,6,0,0"
+                                    IsChecked="{Binding OscSettings.UnmuteThirdOutput, Mode=TwoWay}">
+                                    Mute and unmute the microphone here too
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!--
+                    The five settings that shape every line the chatbox ever receives. They were
+                    scattered down the section with unrelated toggles between them, and none of
+                    them showed the user what they were about to change.
+                -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Every chatbox line" />
+
+                        <TextBlock
+                            Width="auto"
+                            Margin="2,8,0,5"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="How often the chatbox updates" />
+                        <StackPanel Margin="0,0,0,2" Orientation="Horizontal">
+                            <Slider
+                                x:Name="ScanningIntervalSensitivitySlider"
+                                Width="134.5"
+                                Height="12"
+                                Margin="2.2,0,4.5,0"
+                                IsSnapToTickEnabled="True"
+                                Maximum="{x:Static modules:AppSettings.OscTickIntervalMaxSeconds}"
+                                Minimum="{x:Static modules:AppSettings.OscTickIntervalMinSeconds}"
+                                Style="{StaticResource CustomSlider}"
+                                TickFrequency="0.1"
+                                Value="{Binding AppSettings.ScanningInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock
+                                Width="auto"
+                                Padding="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource FontPrimary}"
+                                FontSize="{StaticResource FontSizeSecondary}"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="{Binding AppSettings.ScanningInterval}" />
+                            <TextBlock
+                                Width="auto"
+                                Margin="-2,5"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource FontPrimary}"
+                                FontSize="{StaticResource FontSizeSecondary}"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="seconds" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="A shorter wait keeps the clock and your heart rate current, and asks every switched-on integration for fresh numbers that much more often." />
+
+                        <CheckBox
+                            x:Name="SeperateWithENTERS_checkbox"
+                            Margin="0,8,0,0"
+                            IsChecked="{Binding AppSettings.SeperateWithENTERS, Mode=TwoWay}">
+                            Put each integration on its own line
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Turn this off to run them together on one line, joined by the text below." />
+
+                        <TextBlock
+                            Margin="2,8,0,5"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Text between integrations" />
+                        <TextBox
+                            x:Name="OscMessageSeparator"
+                            Width="140"
+                            Padding="5,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalContentAlignment="Center"
+                            FontSize="{StaticResource FontSizeBody}"
+                            IsEnabled="{Binding AppSettings.SeperateWithENTERS, Converter={StaticResource InvertBooleanConverter}}"
+                            Text="{Binding AppSettings.OscMessageSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock
+                            Margin="2,12,0,5"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Text before every line" />
+                        <TextBox
+                            x:Name="OscMessagePrefix"
+                            Width="220"
+                            Padding="5,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalContentAlignment="Center"
+                            FontSize="{StaticResource FontSizeBody}"
+                            Text="{Binding AppSettings.OscMessagePrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock
+                            Margin="2,12,0,5"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Text after every line" />
+                        <TextBox
+                            x:Name="OscMessageSuffix"
+                            Width="220"
+                            Padding="5,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalContentAlignment="Center"
+                            FontSize="{StaticResource FontSizeBody}"
+                            Text="{Binding AppSettings.OscMessageSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Tip: use \n for a new line." />
+
+                        <!--
+                            Stand-in segments rather than live ones, so the line still shows what
+                            these boxes do with every integration switched off. The chip is the
+                            reason the block exists: a prefix spends characters the integrations
+                            were going to use, and nothing said so.
+                        -->
+                        <controls:SegmentPreview Caption="A line with two integrations on it" Line="{Binding LinePreview}" />
+                    </StackPanel>
+                </Border>
+
+                <!--  SteamVR  -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="SteamVR" />
+                        <CheckBox x:Name="StartWithSteamVr_checkbox" IsChecked="{Binding AppSettings.StartWithSteamVr, Mode=TwoWay}">
+                            Start MagicChatbox when SteamVR starts
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="MagicChatbox adds itself to SteamVR's startup apps and opens straight to the tray, so it is already sending to the chatbox by the time you are in. SteamVR keeps its own switch for this under Settings → Startup / Shutdown." />
+                        <CheckBox
+                            x:Name="QuitWithSteamVr_checkbox"
+                            IsChecked="{Binding AppSettings.QuitWithSteamVr, Mode=TwoWay}"
+                            IsEnabled="{Binding AppSettings.StartWithSteamVr}">
+                            Close it again when SteamVR closes
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Leave this off to keep MagicChatbox running at the desk after you take the headset off." />
+                    </StackPanel>
+                </Border>
+
+                <!--  Everything else  -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Other" />
+                        <CheckBox x:Name="CountOculusSystemAsVR_checkbox" IsChecked="{Binding AppSettings.CountOculusSystemAsVR, Mode=TwoWay}">
+                            Treat the Oculus software as "in VR" (experimental)
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Integrations can be set to show only at the desk or only in VR. This decides which of the two you count as being in, when the Oculus software is running but SteamVR is not." />
+                        <CheckBox
+                            x:Name="ToggleVoiceWithV"
+                            Margin="0,6,0,0"
+                            IsChecked="{Binding TtsSettings.ToggleVoiceWithV, Mode=TwoWay}">
+                            Mute and unmute VRChat with the V key
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
+
+                <!--  Updates  -->
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Updates" />
+
+                        <CheckBox
+                            x:Name="CheckUpdateOnStartup"
+                            IsChecked="{Binding AppSettings.CheckUpdateOnStartup, Mode=TwoWay}">
+                            Look for a newer version at startup (recommended)
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Otherwise it only looks when you press the button on the version card." />
+
+                        <TextBlock
+                            Margin="2,12,0,5"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Stable releases" />
+                        <Border Style="{StaticResource SegmentedChoiceContainerStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton
+                                    Content="Ignore"
+                                    GroupName="StableUpdateMode"
+                                    IsChecked="{Binding AppSettings.StableUpdateMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Off, Mode=TwoWay}"
+                                    Style="{StaticResource SegmentedChoiceStyle}" />
+                                <RadioButton
+                                    Content="Tell me"
+                                    GroupName="StableUpdateMode"
+                                    IsChecked="{Binding AppSettings.StableUpdateMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Notify, Mode=TwoWay}"
+                                    Style="{StaticResource SegmentedChoiceStyle}" />
+                                <RadioButton
+                                    Content="Install for me"
+                                    GroupName="StableUpdateMode"
+                                    IsChecked="{Binding AppSettings.StableUpdateMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Auto, Mode=TwoWay}"
+                                    Style="{StaticResource SegmentedChoiceStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock
+                            Margin="2,14,0,5"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Test versions" />
+                        <Border Style="{StaticResource SegmentedChoiceContainerStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton
+                                    Content="Ignore"
+                                    GroupName="PreReleaseUpdateMode"
+                                    IsChecked="{Binding AppSettings.PreReleaseUpdateMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Off, Mode=TwoWay}"
+                                    Style="{StaticResource SegmentedChoiceStyle}" />
+                                <RadioButton
+                                    Content="Tell me"
+                                    GroupName="PreReleaseUpdateMode"
+                                    IsChecked="{Binding AppSettings.PreReleaseUpdateMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Notify, Mode=TwoWay}"
+                                    Style="{StaticResource SegmentedChoiceStyle}" />
+                                <RadioButton
+                                    Content="Install for me"
+                                    GroupName="PreReleaseUpdateMode"
+                                    IsChecked="{Binding AppSettings.PreReleaseUpdateMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Auto, Mode=TwoWay}"
+                                    Style="{StaticResource SegmentedChoiceStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock
+                            Margin="2,10,20,0"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="Each row decides what happens to updates from that channel, whichever version you are on now. Test versions get new features first and can be rough." />
+                        <TextBlock
+                            Margin="2,0,20,4"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="&quot;Install for me&quot; downloads in the background and swaps the files the next time you start MagicChatbox, so nothing interrupts you mid-session. You can always go back with the button below." />
+                    </StackPanel>
+                </Border>
+
+                <!--
+                    Content, not ContentTemplate: a ContentTemplate takes its DataContext from the
+                    button's Content, which was never set, so the version binding below resolved against
+                    nothing and the button showed its icon with no text at all.
+                -->
+                <StackPanel Margin="0,5,0,15" Orientation="Horizontal">
+                    <Button
+                        x:Name="Rollback"
+                        Height="25"
+                        Margin="0,0,5,0"
+                        Padding="10,0"
+                        HorizontalAlignment="Left"
+                        Command="{Binding RollbackCommand}"
+                        Content="{Binding UpdateState.RollBackVersion, Converter={StaticResource VersionDisplayConverter}, ConverterParameter='Go back to {0}', UpdateSourceTrigger=PropertyChanged}"
+                        Style="{DynamicResource Status_Button_style}"
+                        Visibility="{Binding UpdateState.RollBackUpdateAvailable, Converter={StaticResource InverseBoolToHiddenConverter}}" />
+
+                    <Button
+                        x:Name="UpdateByZipFile"
+                        Height="25"
+                        Padding="10,0"
+                        HorizontalAlignment="Left"
+                        Command="{Binding UpdateByZipCommand}"
+                        Content="Install from a ZIP file"
+                        Style="{DynamicResource Status_Button_style}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button
+                        x:Name="ResetFavorites"
+                        Width="85"
+                        Height="25"
+                        Margin="0,0,5,15"
+                        HorizontalAlignment="Left"
+                        Command="{Binding ResetFavoritesCommand}"
+                        Content="Reset Status"
+                        Style="{DynamicResource Status_Button_style}" />
+                    <Button
+                        x:Name="OpenConfigFolder"
+                        Width="120"
+                        Height="25"
+                        Margin="5,0,5,15"
+                        Command="{Binding OpenConfigFolderCommand}"
+                        Content="Open config folder"
+                        Style="{DynamicResource Status_Button_style}" />
+                    <Button
+                        x:Name="OpenLogFolder"
+                        Width="101"
+                        Height="25"
+                        Margin="5,0,5,15"
+                        Command="{Binding OpenLogFolderCommand}"
+                        Content="Open log folder"
+                        Style="{DynamicResource Status_Button_style}" />
+
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+
+    </Grid>
+</UserControl>

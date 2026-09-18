@@ -1,0 +1,140 @@
+<UserControl
+    x:Class="vrcosc_magicchatbox.UI.Pages.Options.TtsOptionsSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:modules="clr-namespace:vrcosc_magicchatbox.Classes.Modules"
+    xmlns:sections="clr-namespace:vrcosc_magicchatbox.ViewModels.Sections"
+    d:DataContext="{d:DesignInstance Type=sections:TtsSectionViewModel,
+                                     IsDesignTimeCreatable=False}"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MagicChatbox;component/UI/Resources/SharedConverters.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="0,5,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.Background>
+            <LinearGradientBrush SpreadMethod="Pad" StartPoint="1,1" EndPoint="0,0">
+                <GradientStop Color="{StaticResource SurfaceGradientStartColor}" />
+                <GradientStop Offset="1" Color="{StaticResource SurfaceGradientEndColor}" />
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ToggleButton
+                Grid.Column="0"
+                Width="Auto"
+                Height="30"
+                HorizontalAlignment="Left"
+                IsChecked="{Binding AppSettings.Settings_TTS, Mode=TwoWay}"
+                Style="{StaticResource ExpandCollapseToggleButtonStyle}"
+                Tag="Text to speech options"
+                TextOptions.TextRenderingMode="ClearType" />
+            <TextBlock
+                x:Name="LearnMoreAboutTTSbtn"
+                Grid.Column="1"
+                Width="auto"
+                Margin="10,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Cursor="Hand"
+                FontFamily="{StaticResource FontPrimary}"
+                FontSize="{StaticResource FontSizeCaption}"
+                Foreground="{StaticResource AccentTealBrush}"
+                MouseUp="LearnMoreAboutTTSbtn_MouseUp"
+                Text="Learn more"
+                TextDecorations="Underline" />
+        </Grid>
+        <Grid
+            Grid.Row="1"
+            Height="Auto"
+            Margin="34,10,0,0"
+            Visibility="{Binding AppSettings.Settings_TTS, Converter={StaticResource InverseBoolToHiddenConverter}, UpdateSourceTrigger=PropertyChanged}">
+            <StackPanel>
+                <Border
+                    Margin="0,0,0,10"
+                    BorderBrush="{StaticResource StatusWarningBrush}"
+                    BorderThickness="1"
+                    Style="{StaticResource OptionCardStyle}">
+                    <TextBlock
+                        FontFamily="{StaticResource FontPrimary}"
+                        FontSize="{StaticResource FontSizeSecondary}"
+                        Foreground="{StaticResource StatusWarningBrush}"
+                        Text="Heads up: the voices come from a TikTok service that is not always up. When it is down, nothing is spoken."
+                        TextWrapping="Wrap" />
+                </Border>
+
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="When it speaks" />
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Text to speech reads your chat messages out loud on this PC. It does not change what the chatbox shows." />
+                        <CheckBox x:Name="TTSCutOff" IsChecked="{Binding TtsSettings.TtsCutOff, Mode=TwoWay}">
+                            Cut off the current message when a new one arrives
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Leave it off and messages wait their turn, read out one after another." />
+                        <CheckBox x:Name="TTSOnResendChat" IsChecked="{Binding TtsSettings.TtsOnResendChat, Mode=TwoWay}">
+                            Speak it again when you resend a message
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Applies to messages you send again from your chat history." />
+                        <CheckBox x:Name="TTSAutoUnmute" IsChecked="{Binding TtsSettings.AutoUnmuteTTS, Mode=TwoWay}">
+                            Switch your VRChat microphone on while it speaks
+                        </CheckBox>
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Unmutes you in VRChat for as long as the audio lasts, then mutes you again. Others only hear the speech if your microphone picks it up." />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Voice and speakers" />
+                        <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Which voice reads the message, and which speakers or headset it comes out of. Pick a virtual audio cable here if you want the speech to reach your microphone." />
+                        <StackPanel Style="{StaticResource OptionActionRowStyle}">
+                            <TextBlock
+                                Width="85"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource OptionFieldLabelStyle}"
+                                Text="Voice" />
+                            <ComboBox
+                                x:Name="TikTokTTSVoicesComboBox"
+                                Width="186"
+                                DisplayMemberPath="DisplayName"
+                                ItemsSource="{Binding TtsAudio.TikTokTTSVoices, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedItem="{Binding TtsAudio.SelectedTikTokTTSVoice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedValuePath="ApiName"
+                                SelectionChanged="TikTokTTSVoicesComboBox_SelectionChanged" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource OptionActionRowStyle}">
+                            <TextBlock
+                                Width="85"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource OptionFieldLabelStyle}"
+                                Text="Play through" />
+                            <ComboBox
+                                x:Name="PlaybackOutputDeviceComboBox"
+                                Width="186"
+                                DisplayMemberPath="FriendlyName"
+                                ItemsSource="{Binding TtsAudio.PlaybackOutputDevices, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedItem="{Binding TtsAudio.SelectedPlaybackOutputDevice, Mode=TwoWay}"
+                                SelectionChanged="PlaybackOutputDeviceComboBox_SelectionChanged" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+    </Grid>
+</UserControl>

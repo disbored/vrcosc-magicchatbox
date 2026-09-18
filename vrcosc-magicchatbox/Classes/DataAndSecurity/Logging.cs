@@ -1,116 +1,205 @@
 ﻿using NLog;
 using System;
-using System.Windows.Forms;
+using System.Net.Http;
+using vrcosc_magicchatbox.Core.State;
+using vrcosc_magicchatbox.Services;
 using vrcosc_magicchatbox.UI.Dialogs;
+using vrcosc_magicchatbox.ViewModels.State;
 
-namespace vrcosc_magicchatbox.Classes.DataAndSecurity
+namespace vrcosc_magicchatbox.Classes.DataAndSecurity;
+
+internal static class Logging
 {
-    internal static class Logging
+    private static AppUpdateState? _appUpdateState;
+    private static IEnvironmentService? _env;
+    private static IHttpClientFactory? _httpClientFactory;
+    private static IUiDispatcher? _dispatcher;
+    private static Core.Services.IVersionService? _versionService;
+    private static INavigationService? _nav;
+
+    public static void Initialize(
+        AppUpdateState appUpdateState,
+        IEnvironmentService env,
+        IHttpClientFactory httpClientFactory,
+        IUiDispatcher dispatcher,
+        Core.Services.IVersionService versionService,
+        INavigationService nav)
     {
-        // Logger instance for the application
-        public static readonly Logger LogController = LogManager.GetCurrentClassLogger();
+        _appUpdateState = appUpdateState;
+        _env = env;
+        _httpClientFactory = httpClientFactory;
+        _dispatcher = dispatcher;
+        _versionService = versionService;
+        _nav = nav;
+    }
 
-        // Centralized method to handle errors during logging
-        private static void HandleLoggingError(string context, Exception e)
+    private static Logger? _logController;
+
+    [ThreadStatic]
+    private static bool _isLogging;
+
+    private static void HandleLoggingError(string context, Exception e)
+    {
+        if (_isLogging)
         {
-            try
-            {
-                // Attempt to log the error to NLog
-                LogController.Error($"{context}\n{e.Message}\n{e.StackTrace}");
-            }
-            catch
-            {
-                // If NLog fails, fallback to console logging
-                Console.Error.WriteLine($"{context}\n{e.Message}\n{e.StackTrace}");
-            }
+            Console.Error.WriteLine($"{context}\n{e.Message}\n{e.StackTrace}");
+            return;
         }
 
-
-
-        // Display a message box with error information
-        public static void ShowMSGBox(
-            int msgboxtimeout = 10000,
-            bool autoClose = true,
-            string msgboxtext = "something went wrong...",
-            Exception? ex = null)
+        try
         {
-            try
+            _isLogging = true;
+            if (_logController != null)
             {
-                if (ex != null)
-                    msgboxtext = ex.Message;
-                new ApplicationError(ex, autoClose, msgboxtimeout).ShowDialog();
+                try
+                {
+                    _logController.Error($"{context}\n{e.Message}\n{e.StackTrace}");
+                    return;
+                }
+                catch
+                {
+                }
             }
-            catch (Exception e)
+
+            Console.Error.WriteLine($"{context}\n{e.Message}\n{e.StackTrace}");
+        }
+        finally
+        {
+            _isLogging = false;
+        }
+    }
+
+    public static void ShowMSGBox(
+        int msgboxtimeout = 10000,
+        bool autoClose = true,
+        string msgboxtext = "something went wrong...",
+        Exception? ex = null)
+    {
+        try
+        {
+            if (ex != null)
+                msgboxtext = ex.Message;
+            new ApplicationError(
+                ex ?? new Exception(msgboxtext), autoClose, msgboxtimeout, _appUpdateState!,
+                _env!, _httpClientFactory!, _dispatcher!, _versionService!, _nav!).ShowDialog();
+        }
+        catch (Exception e)
+        {
+            HandleLoggingError("Error in ShowMSGBox", e);
+        }
+    }
+
+    public static void WriteDebug(string debug, bool MSGBox = false, bool autoclose = false, bool exitapp = false)
+    {
+        try
+        {
+            if (_isLogging)
             {
-                HandleLoggingError("Error in ShowMSGBox", e);
+                Console.Error.WriteLine(debug);
+            }
+            else
+            {
+                try
+                {
+                    _isLogging = true;
+                    if (_logController != null)
+                        _logController.Debug(debug);
+                    else
+                        Console.Error.WriteLine(debug);
+                }
+                finally { _isLogging = false; }
+            }
+            if (MSGBox)
+                ShowMSGBox(msgboxtext: debug, autoClose: autoclose);
+            if (exitapp)
                 Environment.Exit(10);
-            }
         }
-
-        // Log a debug message and optionally show a message box and/or exit the application
-        public static void WriteDebug(string debug, bool MSGBox = false, bool autoclose = false, bool exitapp = false)
+        catch (Exception e)
         {
-            try
-            {
-                LogController.Debug(debug);
-                if (MSGBox)
-                    ShowMSGBox(msgboxtext: debug, autoClose: autoclose);
-                if (exitapp)
-                    Environment.Exit(10);
-            }
-            catch (Exception e)
-            {
-                HandleLoggingError("Error in WriteDebug", e);
-                if (exitapp)
-                    Environment.Exit(10);
-            }
+            HandleLoggingError("Error in WriteDebug", e);
+            if (exitapp)
+                Environment.Exit(10);
         }
+    }
 
-        // Log an exception and optionally show a message box and/or exit the application
-        public static void WriteException(
-            Exception? ex = null,
-            bool MSGBox = true,
-            bool autoclose = false,
-            bool exitapp = false,
-            bool log = true)
+    public static void WriteException(
+        Exception? ex = null,
+        bool MSGBox = true,
+        bool autoclose = false,
+        bool exitapp = false,
+        bool log = true)
+    {
+        try
         {
-            try
+            if (log && ex != null)
             {
-                if (log && ex != null)
-                    LogController.Error(ex.ToString());
-
-                // Show message box if requested and exception is not null
-                if (MSGBox && ex != null)
-                    ShowMSGBox(msgboxtimeout: 10000, autoClose: autoclose, msgboxtext: ex.Message, ex: ex);
-
-                if (exitapp)
-                    Environment.Exit(10);
+                if (_isLogging)
+                {
+                    Console.Error.WriteLine(ex.ToString());
+                }
+                else
+                {
+                    try
+                    {
+                        _isLogging = true;
+                        if (_logController != null)
+                            _logController.Error(ex.ToString());
+                        else
+                            Console.Error.WriteLine(ex.ToString());
+                    }
+                    finally { _isLogging = false; }
+                }
             }
-            catch (Exception e)
-            {
-                HandleLoggingError("Error in WriteException", e);
-                if (exitapp)
-                    Environment.Exit(10);
-            }
+
+            if (MSGBox && ex != null)
+                ShowMSGBox(msgboxtimeout: 10000, autoClose: autoclose, msgboxtext: ex.Message, ex: ex);
+
+            if (exitapp)
+                Environment.Exit(10);
         }
-
-        // Log an informational message and optionally show a message box and/or exit the application
-        public static void WriteInfo(string info, bool MSGBox = false, bool autoclose = false, bool exitapp = false)
+        catch (Exception e)
         {
-            try
-            {
-                LogController.Info(info);
-                if (MSGBox)
-                    ShowMSGBox(msgboxtext: info, autoClose: autoclose);
-                if (exitapp)
-                    Environment.Exit(10);
-            }
-            catch (Exception e)
-            {
-                HandleLoggingError("Error in WriteInfo", e);
-                if (exitapp)
-                    Environment.Exit(10);
-            }
+            HandleLoggingError("Error in WriteException", e);
+            if (exitapp)
+                Environment.Exit(10);
         }
+    }
+
+    public static void WriteInfo(string info, bool MSGBox = false, bool autoclose = false, bool exitapp = false)
+    {
+        try
+        {
+            if (_isLogging)
+            {
+                Console.Error.WriteLine(info);
+            }
+            else
+            {
+                try
+                {
+                    _isLogging = true;
+                    if (_logController != null)
+                        _logController.Info(info);
+                    else
+                        Console.Error.WriteLine(info);
+                }
+                finally { _isLogging = false; }
+            }
+            if (MSGBox)
+                ShowMSGBox(msgboxtext: info, autoClose: autoclose);
+            if (exitapp)
+                Environment.Exit(10);
+        }
+        catch (Exception e)
+        {
+            HandleLoggingError("Error in WriteInfo", e);
+            if (exitapp)
+                Environment.Exit(10);
+        }
+    }
+
+    public static void SetLoggerInstance(Logger? logger)
+    {
+        _logController = logger;
     }
 }

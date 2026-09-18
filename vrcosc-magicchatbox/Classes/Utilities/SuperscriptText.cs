@@ -1,0 +1,32 @@
+using System.Collections.Generic;
+
+namespace vrcosc_magicchatbox.Classes.Utilities;
+
+public static class SuperscriptText
+{
+    private static readonly Dictionary<char, char> Map = new()
+    {
+        ['a'] = 'ᵃ', ['b'] = 'ᵇ', ['c'] = 'ᶜ', ['d'] = 'ᵈ', ['e'] = 'ᵉ', ['f'] = 'ᶠ',
+        ['g'] = 'ᵍ', ['h'] = 'ʰ', ['i'] = 'ⁱ', ['j'] = 'ʲ', ['k'] = 'ᵏ', ['l'] = 'ˡ',
+        ['m'] = 'ᵐ', ['n'] = 'ⁿ', ['o'] = 'ᵒ', ['p'] = 'ᵖ', ['r'] = 'ʳ', ['s'] = 'ˢ',
+        ['t'] = 'ᵗ', ['u'] = 'ᵘ', ['v'] = 'ᵛ', ['w'] = 'ʷ', ['x'] = 'ˣ', ['y'] = 'ʸ',
+        ['z'] = 'ᶻ',
+
+        ['0'] = '⁰', ['1'] = '¹', ['2'] = '²', ['3'] = '³', ['4'] = '⁴',
+        ['5'] = '⁵', ['6'] = '⁶', ['7'] = '⁷', ['8'] = '⁸', ['9'] = '⁹',
+        ['+'] = '⁺', ['-'] = '⁻', ['='] = '⁼', ['('] = '⁽', [')'] = '⁾',
+
+        ['?'] = 'ˀ', ['<'] = '˂', ['>'] = '˃', ['~'] = '˜', ['^'] = 'ˆ',
+        [':'] = '˸', ['*'] = '˟', ['|'] = 'ˈ', ['"'] = 'ˮ',
+        ['\''] = 'ʼ', ['’'] = 'ʼ', ['`'] = 'ˋ',
+
+        ['!'] = 'ꜝ',
+
+        ['%'] = '⁒',
+        ['/'] = '·',
+    };
+
+    public static bool TryMap(char value, out char raised) => Map.TryGetValue(value, out raised);
+
+    public static bool CanRaise(char value) => Map.ContainsKey(value);
+}

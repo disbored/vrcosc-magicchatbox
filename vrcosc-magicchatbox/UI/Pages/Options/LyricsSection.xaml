@@ -1,0 +1,358 @@
+<UserControl
+    x:Class="vrcosc_magicchatbox.UI.Pages.Options.LyricsSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="clr-namespace:vrcosc_magicchatbox.UI.Controls"
+    xmlns:lyrics="clr-namespace:vrcosc_magicchatbox.Classes.Modules.Lyrics"
+    xmlns:sections="clr-namespace:vrcosc_magicchatbox.ViewModels.Sections"
+    d:DataContext="{d:DesignInstance Type=sections:LyricsSectionViewModel,
+                                     IsDesignTimeCreatable=False}"
+    mc:Ignorable="d">
+    <Grid Margin="0,5,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.Background>
+            <LinearGradientBrush SpreadMethod="Pad" StartPoint="1,1" EndPoint="0,0">
+                <GradientStop Color="{StaticResource SurfaceGradientStartColor}" />
+                <GradientStop Offset="1" Color="{StaticResource SurfaceGradientEndColor}" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <Grid Grid.Row="0">
+            <ToggleButton
+                Width="Auto"
+                Height="30"
+                HorizontalAlignment="Left"
+                IsChecked="{Binding AppSettings.Settings_Lyrics, Mode=TwoWay}"
+                Style="{StaticResource ExpandCollapseToggleButtonStyle}"
+                Tag="Lyrics (MediaLink &amp; Spotify)"
+                TextOptions.TextRenderingMode="ClearType" />
+        </Grid>
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="34,10,0,0"
+            d:Visibility="Visible"
+            Visibility="{Binding AppSettings.Settings_Lyrics, Converter={StaticResource InverseBoolToHiddenConverter}, UpdateSourceTrigger=PropertyChanged}">
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Which players to follow" />
+                    <TextBlock
+                        Margin="2,3,0,10"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="Lyrics ride along with the music you are already showing, and each player has its own switch. The same two switches sit on the Spotify and Media link cards on the Integrations page." />
+
+                    <StackPanel Orientation="Horizontal">
+                        <ToggleButton
+                            Height="22"
+                            Margin="0,0,8,0"
+                            Padding="10,0"
+                            VerticalAlignment="Center"
+                            Content="Spotify"
+                            IsChecked="{Binding LyricsFromSpotify, Mode=TwoWay}"
+                            Style="{StaticResource GlowyToggleButtonLyrics}"
+                            ToolTip="Follow the track Spotify itself reports, with its own timing." />
+                        <ToggleButton
+                            Height="22"
+                            Padding="10,0"
+                            VerticalAlignment="Center"
+                            Content="Media link"
+                            IsChecked="{Binding LyricsFromMediaLink, Mode=TwoWay}"
+                            Style="{StaticResource GlowyToggleButtonLyrics}"
+                            ToolTip="Follow whatever Windows is playing: browsers, local players, anything with media keys." />
+                    </StackPanel>
+
+                    <TextBlock
+                        Margin="0,14,0,6"
+                        Style="{StaticResource OptionFieldLabelStyle}"
+                        Text="Show the words while I am on" />
+
+                    <!--
+                        The same two chips the integration tiles use for the same two settings. They
+                        carry their own size, label and tooltip, so there is one place to change what
+                        a route chip looks like.
+                    -->
+                    <StackPanel Orientation="Horizontal">
+                        <ToggleButton
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding IntegrationSettings.IntgrLyrics_DESKTOP, Mode=TwoWay}"
+                            Style="{StaticResource RouteChipDesktop}" />
+                        <ToggleButton
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding IntegrationSettings.IntgrLyrics_VR, Mode=TwoWay}"
+                            Style="{StaticResource RouteChipVr}" />
+                    </StackPanel>
+
+                    <TextBlock
+                        Margin="2,12,0,0"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="{Binding HostSummary}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Now playing" />
+
+                    <TextBlock
+                        Margin="2,3,0,0"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="{Binding Display.NowPlaying}" />
+
+                    <controls:SegmentPreview Line="{Binding Display.CurrentLine}" />
+
+                    <TextBlock
+                        Margin="2,8,0,0"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="{Binding Display.StatusText}" />
+                    <TextBlock
+                        Margin="2,0,0,0"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="{Binding Display.PositionSource, StringFormat='Position from {0}'}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Timing" />
+                    <TextBlock
+                        Margin="2,3,0,8"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="Community timings vary between tracks. Nudge until the words land with the music." />
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button
+                            Width="52"
+                            Height="26"
+                            Margin="0,0,4,0"
+                            Command="{Binding NudgeOffsetCommand}"
+                            CommandParameter="-500"
+                            Content="−500"
+                            Style="{StaticResource Status_Button_style}" />
+                        <Button
+                            Width="52"
+                            Height="26"
+                            Margin="0,0,4,0"
+                            Command="{Binding NudgeOffsetCommand}"
+                            CommandParameter="-100"
+                            Content="−100"
+                            Style="{StaticResource Status_Button_style}" />
+                        <Button
+                            Width="60"
+                            Height="26"
+                            Margin="0,0,4,0"
+                            Command="{Binding ResetOffsetCommand}"
+                            Content="Reset"
+                            Style="{StaticResource Status_Button_style}"
+                            ToolTip="Back to the +100 ms the app ships with." />
+                        <Button
+                            Width="52"
+                            Height="26"
+                            Margin="0,0,4,0"
+                            Command="{Binding NudgeOffsetCommand}"
+                            CommandParameter="100"
+                            Content="+100"
+                            Style="{StaticResource Status_Button_style}" />
+                        <Button
+                            Width="52"
+                            Height="26"
+                            Margin="0,0,10,0"
+                            Command="{Binding NudgeOffsetCommand}"
+                            CommandParameter="500"
+                            Content="+500"
+                            Style="{StaticResource Status_Button_style}" />
+                        <TextBlock
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="{Binding OffsetSummary}" />
+                    </StackPanel>
+
+                    <!--  Break timing. Same two commands the Integrations ribbon drives, so the numbers
+                          here and there are one value, not two copies. The two stepper labels read
+                          "Gap" and "Hold" because they come from a shared template - see the report.  -->
+                    <TextBlock
+                        Margin="2,14,0,6"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="The first number is when a break starts: once the singing stops for longer than that, the song counts as being in an instrumental break. The second is how long the last line you heard stays up before the ♪ marker replaces it." />
+
+                    <!--  Same stepper row as the Integrations ribbon - one template, so the two
+                          copies cannot drift apart in type or spacing again.  -->
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LyricsTimingRowTemplate}" />
+
+                    <TextBlock
+                        Margin="2,8,0,0"
+                        Foreground="{StaticResource StatusWarningBrush}"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="{Binding TimingWarning}"
+                        Visibility="{Binding HasTimingWarning, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="How it looks" />
+                    <TextBlock
+                        Margin="2,3,0,0"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="Long lines scroll across the space that is left. These two show the same words with plenty of room and with almost none." />
+
+                    <controls:SegmentPreview Caption="With plenty of room" Line="{Binding RoomyPreview}" />
+                    <controls:SegmentPreview Caption="With almost none" Line="{Binding TightPreview}" />
+
+                    <CheckBox
+                        Margin="0,10,0,2"
+                        Content="Show a ♪ before the lyric"
+                        IsChecked="{Binding Settings.ShowNoteIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox
+                        Margin="0,2"
+                        Content="Raise (backing vocals) to ᵇᵃᶜᵏⁱⁿᵍ ᵛᵒᶜᵃˡˢ"
+                        IsChecked="{Binding Settings.SuperscriptAsides, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ToolTip="Drops the brackets and raises what was inside them, so the main line reads at full size. Asides that cannot be raised keep their brackets." />
+                    <CheckBox
+                        Margin="0,2"
+                        Content="Show a marker during intros and instrumental breaks"
+                        IsChecked="{Binding Settings.ShowGapMarker, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <StackPanel
+                        Margin="0,6,0,0"
+                        Orientation="Horizontal"
+                        Visibility="{Binding Settings.ShowGapMarker, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBlock
+                            Width="210"
+                            Margin="0,0,6,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Which marker" />
+                        <ComboBox
+                            Width="260"
+                            HorizontalAlignment="Left"
+                            ItemsSource="{Binding Source={x:Static lyrics:LyricsSettings.AvailableInstrumentalMarkers}}"
+                            SelectedValue="{Binding Settings.InstrumentalMarker, Mode=TwoWay}"
+                            ToolTip="The animated ones step through their frames as the song plays.">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            Width="210"
+                            Margin="0,0,6,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="Skip lines shorter than" />
+                        <TextBox
+                            Width="60"
+                            Text="{Binding Settings.MinimumCharacters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock
+                            Margin="6,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="characters" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Finding the right lyrics" />
+
+                    <TextBlock
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="A song can be in the database several times over - the original, the remixes, the live take - all sharing a name and often a length. These decide how sure the match has to be before the words go on screen." />
+
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            Width="210"
+                            Margin="0,0,6,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="How sure the match must be" />
+                        <ComboBox
+                            Width="260"
+                            HorizontalAlignment="Left"
+                            ItemsSource="{Binding Source={x:Static lyrics:LyricsSettings.AvailableMatchStrictness}}"
+                            SelectedValue="{Binding Settings.MatchStrictness, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <CheckBox
+                        Margin="0,10,0,2"
+                        Content="Search again without the version in the title"
+                        IsChecked="{Binding Settings.BroadenSearchWhenNoMatch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ToolTip="Only used when the exact title finds nothing." />
+
+                    <TextBlock
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="&quot;Song (Some Remix)&quot; is searched for again as &quot;Song&quot;, because a database often files a version under the plain name. Anything found that way has to match the running time closely, so this widens what can be found without loosening what counts as a match." />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Sharing space with the song title" />
+                    <TextBlock
+                        Margin="2,3,0,8"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="The chatbox holds 144 characters for every integration together. Hiding the title while a lyric shows roughly doubles the room the words get." />
+
+                    <ComboBox
+                        Width="280"
+                        HorizontalAlignment="Left"
+                        ItemsSource="{Binding CoexistenceModes}"
+                        SelectedItem="{Binding Settings.Coexistence, Mode=TwoWay}"
+                        Style="{StaticResource DarkComboBoxStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource OptionCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Where lyrics come from" />
+                    <TextBlock
+                        Margin="2,3,0,8"
+                        Style="{StaticResource OptionHelpTextStyle}"
+                        Text="Your own .lrc files are used first when a folder is set. Anything not found there is looked up on LRCLIB, a free community lyrics database. Lyrics are contributed by its users and MagicChatBox does not own them." />
+
+                    <CheckBox
+                        Margin="0,2"
+                        Content="Use my own .lrc files first"
+                        IsChecked="{Binding Settings.UseLocalFiles, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                        <TextBox
+                            Width="300"
+                            VerticalAlignment="Center"
+                            Text="{Binding Settings.LocalLyricsFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button
+                            Width="80"
+                            Height="26"
+                            Margin="6,0,0,0"
+                            Command="{Binding BrowseLocalFolderCommand}"
+                            Content="Browse"
+                            Style="{StaticResource Status_Button_style}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>

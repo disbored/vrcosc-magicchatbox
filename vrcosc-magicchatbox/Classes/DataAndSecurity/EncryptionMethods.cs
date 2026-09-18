@@ -1,96 +1,86 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Text;
-using vrcosc_magicchatbox.ViewModels;
 
-namespace vrcosc_magicchatbox.Classes.DataAndSecurity
+namespace vrcosc_magicchatbox.Classes.DataAndSecurity;
+
+internal static class EncryptionMethods
 {
-    internal static class EncryptionMethods
+    public static string? DecryptString(string cipherText)
     {
-
-        public static string DecryptString(string cipherText)
+        try
         {
-            try
-            {
-                byte[] iv = new byte[16];
-                byte[] buffer = Convert.FromBase64String(cipherText);
-
-                using (Aes aes = Aes.Create())
-                {
-                    aes.Key = Encoding.UTF8.GetBytes(ViewModel.Instance.aesKey);
-                    aes.IV = iv;
-
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-                    using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(buffer))
-                    {
-                        using (CryptoStream cryptoStream = new CryptoStream((System.IO.Stream)memoryStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            using (System.IO.StreamReader streamReader = new System.IO.StreamReader((System.IO.Stream)cryptoStream))
-                            {
-                                return streamReader.ReadToEnd();
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-
-                Logging.WriteException(ex, MSGBox: false);
+            if (string.IsNullOrEmpty(cipherText))
                 return null;
-            }
 
+            byte[] encryptedBytes = Convert.FromBase64String(cipherText);
+            byte[] plainBytes = ProtectedData.Unprotect(
+                encryptedBytes, null, DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(plainBytes);
         }
-
-        public static string EncryptString(string plainText)
+        catch (CryptographicException ex)
         {
-            byte[] iv = new byte[16];
-            byte[] array;
-
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = Encoding.UTF8.GetBytes(ViewModel.Instance.aesKey);
-                aes.IV = iv;
-
-                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-
-                using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream())
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream((System.IO.Stream)memoryStream, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (System.IO.StreamWriter streamWriter = new System.IO.StreamWriter((System.IO.Stream)cryptoStream))
-                        {
-                            streamWriter.Write(plainText);
-                        }
-
-                        array = memoryStream.ToArray();
-                    }
-                }
-            }
-
-            return Convert.ToBase64String(array);
+            Logging.WriteInfo($"Decryption failed (token may need re-entry): {ex.Message}");
+            return null;
         }
-
-        public static bool TryProcessToken(ref string source, ref string destination, bool isEncryption)
+        catch (FormatException ex)
         {
-            try
-            {
-                if (string.IsNullOrEmpty(source))
-                {
-                    destination = null;
-                    return true;
-                }
+            Logging.WriteInfo($"Decryption failed (invalid base64): {ex.Message}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logging.WriteException(ex, MSGBox: false);
+            return null;
+        }
+    }
 
-                destination = isEncryption ? EncryptString(source) : DecryptString(source);
+    public static string? EncryptString(string plainText)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(plainText))
+                return null;
+
+            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+            byte[] encryptedBytes = ProtectedData.Protect(
+                plainBytes, null, DataProtectionScope.CurrentUser);
+            return Convert.ToBase64String(encryptedBytes);
+        }
+        catch (CryptographicException ex)
+        {
+            Logging.WriteInfo($"Encryption failed (token may need re-entry): {ex.Message}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logging.WriteException(ex, MSGBox: false);
+            return null;
+        }
+    }
+
+    public static bool TryProcessToken(ref string source, ref string destination, bool isEncryption)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(source))
+            {
+                destination = string.Empty;
                 return true;
             }
-            catch (Exception ex)
-            {
-                Logging.WriteException(ex, MSGBox: false);
-                destination = null;
-                return false;
-            }
+
+            string? result = isEncryption ? EncryptString(source) : DecryptString(source);
+            destination = result ?? string.Empty;
+
+            // Success is decided by the result, not by the coalesced destination:
+            // a value that legitimately round-trips to an empty string still succeeded.
+            return result != null;
+        }
+        catch (Exception ex)
+        {
+            Logging.WriteException(ex, MSGBox: false);
+            destination = string.Empty;
+            return false;
         }
     }
 }

@@ -1,128 +1,189 @@
-﻿using NAudio.Wave;
-using OpenAI;
+﻿using OpenAI;
 using OpenAI.Audio;
 using OpenAI.Chat;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using vrcosc_magicchatbox.Classes.DataAndSecurity;
-using vrcosc_magicchatbox.ViewModels;
+using vrcosc_magicchatbox.Core.Configuration;
+using vrcosc_magicchatbox.Core.Privacy;
+using vrcosc_magicchatbox.Core.Toast;
+using vrcosc_magicchatbox.Services;
+using vrcosc_magicchatbox.ViewModels.State;
 
-namespace vrcosc_magicchatbox.Classes.Modules
+namespace vrcosc_magicchatbox.Classes.Modules;
+
+public class OpenAIModule : ITranscriptionService
 {
-    public class OpenAIModule
+    private readonly ISettingsProvider<OpenAISettings> _settingsProvider;
+    private OpenAISettings Settings => _settingsProvider.Value;
+    private void SaveSettings() => _settingsProvider.Save();
+
+    private readonly OpenAIDisplayState _openAI;
+    private readonly IPrivacyConsentService _consent;
+    private readonly IToastService? _toast;
+
+    public OpenAIModule(
+        ISettingsProvider<OpenAISettings> settingsProvider,
+        OpenAIDisplayState openAI,
+        IPrivacyConsentService consent,
+        IToastService? toast = null)
     {
-
-
-        private static readonly Lazy<OpenAIModule> instance = new Lazy<OpenAIModule>(() => new OpenAIModule());
-
-        private OpenAIModule()
-        { }
-
-        private string CreateCustomOpenAIAccessErrorTxt(Exception ex)
-        {
-            if (ex.Message.Contains("Incorrect API"))
-            {
-                return "Invalid API key";
-            }
-            else if (ex.Message.Contains("No such organization"))
-            {
-                return "Invalid organization ID";
-            }
-            else if (ex.Message.Contains("500"))
-            {
-                return "Internal server error, try again later";
-            }
-            else if (ex.Message.Contains("503"))
-            {
-                return "Service unavailable, try again later";
-            }
-            else
-            {
-                return ex.Message;
-            }
-        }
-
-
-        private void ReportTestConnectionError(Exception ex)
-        {
-
-            Logging.WriteException(ex, MSGBox: false);
-            ViewModel.Instance.OpenAIAccessTokenEncrypted = string.Empty;
-            ViewModel.Instance.OpenAIOrganizationIDEncrypted = string.Empty;
-            ViewModel.Instance.OpenAIAccessToken = string.Empty;
-            ViewModel.Instance.OpenAIOrganizationID = string.Empty;
-            ViewModel.Instance.OpenAIConnected = false;
-            ViewModel.Instance.OpenAIAccessError = true;
-            ViewModel.Instance.OpenAIAccessErrorTxt = CreateCustomOpenAIAccessErrorTxt(ex);
-            OpenAIClient = null;
-        }
-
-
-        private async Task TestConnection()
-        {
-            try
-            {
-                var testMessage = new Message(Role.User, "say: OK");
-
-                var responseMessage = await OpenAIClient.ChatEndpoint.GetCompletionAsync(new ChatRequest(messages: new List<Message> { testMessage }, maxTokens: 1));
-
-                AuthChecked = responseMessage != null;
-
-                if (!AuthChecked)
-                {
-                    ReportTestConnectionError(new Exception("OpenAI connection test failed"));
-                }
-            }
-            catch (Exception ex)
-            {
-                AuthChecked = false;
-                ReportTestConnectionError(ex);
-            }
-        }
-
-        public async Task InitializeClient(string apiKey, string organizationID)
-        {
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                return;
-            }
-
-            if (string.IsNullOrEmpty(organizationID))
-            {
-                return;
-            }
-
-            OpenAIClient = new OpenAIClient(new OpenAIAuthentication(apiKey, organizationID));
-            await TestConnection();
-            ViewModel.Instance.OpenAIConnected = AuthChecked;
-        }
-
-        public async Task<string> TranscribeAudioToText(string audioFilePath)
-        {
-            // Ensure the OpenAI client is initialized
-            if (OpenAIClient == null)
-            {
-                throw new InvalidOperationException("OpenAI client is not initialized.");
-            }
-
-            // Create a request for audio transcription
-            var request = new AudioTranscriptionRequest(Path.GetFullPath(audioFilePath), language: "en");
-
-            // Call the AudioEndpoint to transcribe the audio
-            var response = await OpenAIClient.AudioEndpoint.CreateTranscriptionTextAsync(request);
-
-            // The response is expected to be a string containing the transcription
-            return response; // Directly return the response
-        }
-
-        public bool AuthChecked { get; private set; } = false;
-
-        public static OpenAIModule Instance => instance.Value;
-
-        public bool IsInitialized => OpenAIClient != null;
-        public OpenAIClient OpenAIClient { get; set; } = null;
-
+        _settingsProvider = settingsProvider;
+        _openAI = openAI;
+        _consent = consent;
+        _toast = toast;
     }
+
+    private string CreateCustomOpenAIAccessErrorTxt(Exception ex)
+    {
+        if (ex.Message.Contains("Incorrect API"))
+        {
+            return "Invalid API key";
+        }
+        else if (ex.Message.Contains("No such organization"))
+        {
+            return "Invalid organization ID";
+        }
+        else if (ex.Message.Contains("500"))
+        {
+            return "Internal server error, try again later";
+        }
+        else if (ex.Message.Contains("503"))
+        {
+            return "Service unavailable, try again later";
+        }
+        else
+        {
+            return ex.Message;
+        }
+    }
+
+
+    private static bool IsDefinitiveAuthFailure(Exception ex)
+    {
+        if (ex is System.ClientModel.ClientResultException clientResult && clientResult.Status == 401)
+        {
+            return true;
+        }
+
+        return ex.Message.Contains("Incorrect API") || ex.Message.Contains("No such organization");
+    }
+
+    private void ReportTestConnectionError(Exception ex)
+    {
+        Logging.WriteException(ex, MSGBox: false);
+
+        if (IsDefinitiveAuthFailure(ex))
+        {
+            Settings.AccessTokenEncrypted = string.Empty;
+            Settings.OrganizationIDEncrypted = string.Empty;
+            Settings.AccessToken = string.Empty;
+            Settings.OrganizationID = string.Empty;
+            SaveSettings();
+        }
+
+        _openAI.Connected = false;
+        _openAI.AccessError = true;
+        _openAI.AccessErrorTxt = CreateCustomOpenAIAccessErrorTxt(ex);
+        OpenAIClient = null;
+        _toast?.Show("🤖 OpenAI", CreateCustomOpenAIAccessErrorTxt(ex), ToastType.Error, key: "openai-auth-failed");
+    }
+
+
+    private async Task TestConnection()
+    {
+        try
+        {
+            var chatClient = OpenAIClient!.GetChatClient("gpt-4o-mini");
+            var result = await chatClient.CompleteChatAsync(
+                [new UserChatMessage("say: OK")],
+                new ChatCompletionOptions { MaxOutputTokenCount = 1 });
+
+            AuthChecked = result?.Value != null;
+
+            if (!AuthChecked)
+            {
+                ReportTestConnectionError(new Exception("OpenAI connection test failed"));
+            }
+        }
+        catch (Exception ex)
+        {
+            AuthChecked = false;
+            ReportTestConnectionError(ex);
+        }
+    }
+
+    public async Task InitializeClient(string apiKey, string organizationID)
+    {
+        if (!CreateClient(apiKey, organizationID))
+            return;
+
+        await VerifyConnectionAsync();
+    }
+
+    /// <summary>
+    /// Builds the client without contacting the API. Returns false when there is nothing to verify.
+    /// </summary>
+    public bool CreateClient(string apiKey, string organizationID)
+    {
+        if (!_consent.IsApproved(PrivacyHook.InternetAccess))
+        {
+            OpenAIClient = null;
+            _openAI.Connected = false;
+            _openAI.AccessError = true;
+            _openAI.AccessErrorTxt = "Internet Access permission required";
+            _toast?.Show("🔒 OpenAI", "Internet Access permission required for OpenAI features.", ToastType.Privacy, key: "openai-privacy-denied");
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(organizationID))
+            return false;
+
+        var options = new OpenAIClientOptions { OrganizationId = organizationID };
+        OpenAIClient = new OpenAIClient(new System.ClientModel.ApiKeyCredential(apiKey), options);
+        return true;
+    }
+
+    /// <summary>Round-trips the API to confirm the credentials still work.</summary>
+    public async Task VerifyConnectionAsync()
+    {
+        if (OpenAIClient == null)
+            return;
+
+        await TestConnection();
+        _openAI.Connected = AuthChecked;
+    }
+
+    public bool IsReady => OpenAIClient != null;
+
+    public async Task<string?> TranscribeAsync(
+        byte[] audioData,
+        string audioFilename,
+        string? model = null,
+        string? language = null,
+        CancellationToken ct = default)
+    {
+        if (OpenAIClient == null)
+            throw new InvalidOperationException("OpenAI client is not initialized.");
+
+        var audioClient = OpenAIClient.GetAudioClient(model ?? "whisper-1");
+
+        var options = new AudioTranscriptionOptions();
+        if (!string.IsNullOrEmpty(language))
+            options.Language = language;
+
+        using var stream = new MemoryStream(audioData);
+        var result = await audioClient.TranscribeAudioAsync(
+            stream, audioFilename, options, ct).ConfigureAwait(false);
+
+        return result.Value.Text;
+    }
+
+    public bool AuthChecked { get; private set; } = false;
+
+    public bool IsInitialized => OpenAIClient != null;
+    public OpenAIClient? OpenAIClient { get; set; } = null;
+
 }

@@ -1,33 +1,77 @@
 ﻿using System;
-using System.Threading.Tasks;
-using System.Windows;
-using vrcosc_magicchatbox.Classes.DataAndSecurity;
-using vrcosc_magicchatbox.Classes;
-using vrcosc_magicchatbox.ViewModels;
-using Newtonsoft.Json.Linq;
-using vrcosc_magicchatbox.Classes.Modules;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Microsoft.Win32;
-using vrcosc_magicchatbox.DataAndSecurity;
+using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Navigation;
+using vrcosc_magicchatbox.Classes.DataAndSecurity;
+using vrcosc_magicchatbox.Core.Services;
+using vrcosc_magicchatbox.Core.State;
+using vrcosc_magicchatbox.Services;
+using vrcosc_magicchatbox.ViewModels.State;
 
 namespace vrcosc_magicchatbox.UI.Dialogs
 {
-    /// <summary>
-    /// Interaction logic for ManualPulsoidAuth.xaml
-    /// </summary>
     public partial class ApplicationError : Window
     {
-        public ApplicationError(Exception ex, bool autoclose, int autoCloseinMiliSeconds)
+        public AppUpdateState UpdateState { get; }
+        private readonly IEnvironmentService _env;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUiDispatcher _dispatcher;
+        private readonly IVersionService _versionService;
+        private readonly INavigationService _nav;
+        private readonly Exception _exception;
+        private readonly DateTimeOffset _occurredAt;
+
+        public ApplicationError(
+            Exception ex,
+            bool autoclose,
+            int autoCloseinMiliSeconds,
+            AppUpdateState updateState,
+            IEnvironmentService env,
+            IHttpClientFactory httpClientFactory,
+            IUiDispatcher dispatcher,
+            IVersionService versionService,
+            INavigationService nav)
         {
             InitializeComponent();
-            MainError.Text = ex.Message;
-            CallStack.Text = ex.StackTrace;
-            if(autoclose)
+            UpdateState = updateState;
+            _env = env;
+            _httpClientFactory = httpClientFactory;
+            _dispatcher = dispatcher;
+            _versionService = versionService;
+            _nav = nav;
+            DataContext = this;
+
+            _exception = ex;
+            _occurredAt = DateTimeOffset.Now;
+
+            MainError.Text = string.IsNullOrWhiteSpace(ex.Message) ? "MagicChatbox hit an unexpected error." : ex.Message;
+            ErrorType.Text = ex.GetType().FullName ?? string.Empty;
+            CallStack.Text = string.IsNullOrWhiteSpace(ex.StackTrace) ? "(no stack trace was captured)" : ex.StackTrace;
+
+            UpdateState.PropertyChanged += OnUpdateStateChanged;
+            Closed += (_, _) => UpdateState.PropertyChanged -= OnUpdateStateChanged;
+            RefreshRecoveryHint();
+
+            if (autoclose)
                 _ = AutoClose(autoCloseinMiliSeconds);
-            DataContext = ViewModel.Instance;
-            CheckUpdateBtnn_Click(null, null);
+
+            _ = ManualUpdateCheckAsync();
+        }
+
+        private void OnUpdateStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(AppUpdateState.CanUpdate) or nameof(AppUpdateState.RollBackUpdateAvailable))
+                _dispatcher.BeginInvoke(RefreshRecoveryHint);
+        }
+
+        private void RefreshRecoveryHint()
+        {
+            bool nothingToRecoverWith = !UpdateState.CanUpdate && !UpdateState.RollBackUpdateAvailable;
+            NoRecoveryHint.Visibility = nothingToRecoverWith ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private async Task AutoClose(int autoCloseinMiliSeconds)
@@ -37,12 +81,18 @@ namespace vrcosc_magicchatbox.UI.Dialogs
         }
 
         private void Discord_Click(object sender, RoutedEventArgs e)
-        { Process.Start("explorer", "https://discord.gg/ZaSFwBfhvG"); }
+        { _nav.OpenUrl(Core.Constants.DiscordInviteUrl); }
 
         private void Github_Click(object sender, RoutedEventArgs e)
-        { Process.Start("explorer", "https://github.com/BoiHanny/vrcosc-magicchatbox/issues/new/choose"); }
+        { _nav.OpenUrl(Core.Constants.GitHubNewIssueUrl); }
 
+        private void SupportLink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            if (e.Uri != null)
+                _nav.OpenUrl(e.Uri.AbsoluteUri);
 
+            e.Handled = true;
+        }
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
@@ -51,48 +101,116 @@ namespace vrcosc_magicchatbox.UI.Dialogs
 
         private void OpenLogFolder_Click(object sender, RoutedEventArgs e)
         {
-            string logFolderPath = @"C:\temp\Vrcosc-MagicChatbox";
-            if (Directory.Exists(logFolderPath))
-            {
-                Process.Start("explorer", logFolderPath);
-            }
+            _nav.OpenFolder(_env.LogPath);
         }
+
+        private void OpenCurrentLog_Click(object sender, RoutedEventArgs e)
+        {
+            string? currentLogPath = ResolveCurrentLogPath();
+            if (!string.IsNullOrWhiteSpace(currentLogPath) && _nav.OpenFileInExplorer(currentLogPath))
+                return;
+
+            _nav.OpenFolder(_env.LogPath);
+        }
+
+        private UpdateApp CreateUpdateApp(bool createNewAppLocation = false) =>
+            new UpdateApp(UpdateState, _httpClientFactory, _dispatcher, createNewAppLocation);
 
         private void Update_Click(object sender, RoutedEventArgs e)
         {
-            UpdateApp updater = new UpdateApp(true);
-            updater.SelectCustomZip();
+            CreateUpdateApp(true).SelectCustomZip();
         }
 
-        private void NewVersion_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void UpdateNow_Click(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.Instance.CanUpdate)
+            if (!UpdateState.CanUpdate)
             {
-                ViewModel.Instance.CanUpdate = false;
-                ViewModel.Instance.CanUpdateLabel = false;
-                UpdateApp updateApp = new UpdateApp(true);
-                Task.Run(() => updateApp.PrepareUpdate());
+                _nav.OpenUrl(Core.Constants.GitHubReleasesPageUrl);
+                return;
             }
-            else
+
+            UpdateState.CanUpdate = false;
+            UpdateState.CanUpdateLabel = false;
+            var updateApp = CreateUpdateApp(true);
+            Task.Run(() => updateApp.PrepareUpdate());
+        }
+
+        private void CopyDetails_Click(object sender, RoutedEventArgs e)
+        {
+            string report = Core.Diagnostics.CrashReport.Format(
+                UpdateState.AppVersion?.VersionNumber,
+                _exception.Message,
+                _exception.StackTrace,
+                ResolveCurrentLogPath(),
+                RuntimeInformation.OSDescription,
+                _occurredAt);
+
+            try
             {
-                Process.Start("explorer", "http://github.com/BoiHanny/vrcosc-magicchatbox/releases");
+                Clipboard.SetText(report);
+                CopyDetailsLabel.Text = "Copied";
+                _ = ResetCopyLabel();
             }
+            catch (Exception ex)
+            {
+                Logging.WriteInfo($"Could not copy the crash details to the clipboard: {ex.Message}");
+                CopyDetailsLabel.Text = "Copy failed";
+                _ = ResetCopyLabel();
+            }
+        }
+
+        private async Task ResetCopyLabel()
+        {
+            await Task.Delay(2000);
+            CopyDetailsLabel.Text = "Copy details";
         }
 
         private async Task ManualUpdateCheckAsync()
         {
-            var updateCheckTask = DataController.CheckForUpdateAndWait(true);
-            var delayTask = Task.Delay(TimeSpan.FromSeconds(8));
-
-            await Task.WhenAny(updateCheckTask, delayTask);
+            try
+            {
+                var updateCheckTask = _versionService.CheckForUpdateAndWait(true);
+                var delayTask = Task.Delay(Core.Constants.ManualUpdateCheckTimeout);
+                await Task.WhenAny(updateCheckTask, delayTask);
+            }
+            catch (Exception ex)
+            {
+                Logging.WriteInfo($"The update check from the error dialog failed: {ex.Message}");
+            }
         }
-
-        private void CheckUpdateBtnn_Click(object sender, RoutedEventArgs e) { ManualUpdateCheckAsync(); }
 
         private void rollback_Click(object sender, RoutedEventArgs e)
         {
-            UpdateApp updater = new UpdateApp(true);
-            updater.StartRollback();
+            CreateUpdateApp(true).StartRollback();
+        }
+
+        private string? ResolveCurrentLogPath()
+        {
+            if (string.IsNullOrWhiteSpace(_env.LogPath) || !Directory.Exists(_env.LogPath))
+                return null;
+
+            string today = DateTime.Now.ToString("yyyy-MM-dd");
+            string[] preferredPaths =
+            {
+                Path.Combine(_env.LogPath, $"{today}.log"),
+                Path.Combine(_env.LogPath, $"errors-{today}.log"),
+                Path.Combine(_env.LogPath, "startup-early.log")
+            };
+
+            foreach (string path in preferredPaths)
+            {
+                if (File.Exists(path))
+                    return path;
+            }
+
+            return new DirectoryInfo(_env.LogPath)
+                .EnumerateFiles()
+                .Where(file =>
+                    file.Extension.Equals(".log", StringComparison.OrdinalIgnoreCase) ||
+                    file.Name.Contains(".log.", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .Select(file => file.FullName)
+                .FirstOrDefault();
         }
     }
 }

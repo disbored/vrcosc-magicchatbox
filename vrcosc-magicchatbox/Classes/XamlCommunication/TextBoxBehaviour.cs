@@ -1,7 +1,7 @@
-﻿using System.Windows.Input;
-using System.Windows;
-using vrcosc_magicchatbox.ViewModels;
+﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using vrcosc_magicchatbox.ViewModels;
 
 namespace vrcosc_magicchatbox.Classes
 {
@@ -37,19 +37,17 @@ namespace vrcosc_magicchatbox.Classes
         {
             if (e.Key == Key.Escape || e.Key == Key.Enter)
             {
-                var textBox = sender as TextBox;
+                if (sender is not TextBox textBox) return;
                 var item = textBox.DataContext as StatusItem;
                 if (item == null) return;
 
                 if (e.Key == Key.Escape)
                 {
-                    // Run your logic to cancel the edit here
                     item.editMsg = "";
                     item.IsEditing = false;
                 }
                 else if (e.Key == Key.Enter)
                 {
-                    // If enter is pressed, IsEditing is set to false
                     item.editMsg = textBox.Text;
                     item.IsEditing = false;
                 }

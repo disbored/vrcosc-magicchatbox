@@ -1,0 +1,583 @@
+<UserControl
+    x:Class="vrcosc_magicchatbox.UI.Pages.Options.TikTokLiveSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:vrcosc_magicchatbox.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sections="clr-namespace:vrcosc_magicchatbox.ViewModels.Sections"
+    d:DataContext="{d:DesignInstance Type=sections:TikTokLiveSectionViewModel,
+                                     IsDesignTimeCreatable=False}"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MagicChatbox;component/UI/Resources/SharedConverters.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="0,5,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.Background>
+            <LinearGradientBrush SpreadMethod="Pad" StartPoint="1,1" EndPoint="0,0">
+                <GradientStop Color="{StaticResource SurfaceGradientStartColor}" />
+                <GradientStop Offset="1" Color="{StaticResource SurfaceGradientEndColor}" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <Grid Grid.Row="0">
+            <ToggleButton
+                Width="Auto"
+                Height="30"
+                HorizontalAlignment="Left"
+                IsChecked="{Binding AppSettings.Settings_TikTokLive, Mode=TwoWay}"
+                Style="{StaticResource ExpandCollapseToggleButtonStyle}"
+                Tag="TikTok options"
+                TextOptions.TextRenderingMode="ClearType" />
+        </Grid>
+
+        <Grid
+            Grid.Row="1"
+            Height="Auto"
+            Margin="34,10,0,0"
+            Visibility="{Binding AppSettings.Settings_TikTokLive, Converter={StaticResource InverseBoolToHiddenConverter}, UpdateSourceTrigger=PropertyChanged}">
+            <StackPanel>
+
+                <!--
+                    One preview at the top of the section rather than one per template: this is the
+                    single line TikTok actually sends, whichever halves are turned on.
+                -->
+                <controls:SegmentPreview Caption="What TikTok puts in your chatbox" Line="{Binding CombinedSamplePreview}" />
+                <TextBlock
+                    Style="{StaticResource OptionHelpTextStyle}"
+                    Text="Built from stand-in numbers, so it works before you go live. It follows every switch below as you change them."
+                    TextWrapping="Wrap" />
+
+                <Border Margin="0,0,0,10" Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Your follower count" />
+                        <TextBlock
+                            Margin="0,2,0,8"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="This reads the follower number off your public TikTok page. TikTok can slow it down or change the page, so the last good number is kept if a check fails."
+                            TextWrapping="Wrap" />
+
+                        <CheckBox IsChecked="{Binding TikTokSettings.ShowProfileSummary, Mode=TwoWay}">
+                            Show my follower count in the chatbox
+                        </CheckBox>
+
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Your TikTok name" />
+                                <TextBox
+                                    Width="220"
+                                    Margin="0,3,0,0"
+                                    Padding="5,0,0,0"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding TikTokSettings.ProfileUserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <Button
+                                Width="auto"
+                                Height="26"
+                                Margin="10,20,0,0"
+                                Padding="8,3"
+                                Command="{Binding RefreshProfileCommand}"
+                                Content="Check now"
+                                FontSize="{StaticResource FontSizeCaption}"
+                                Style="{StaticResource Status_Button_style}" />
+                            <StackPanel Margin="12,0,0,0">
+                                <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Check again every (minutes)" />
+                                <TextBox
+                                    Width="70"
+                                    Margin="0,3,0,0"
+                                    Padding="5,0,0,0"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding TikTokSettings.ProfileRefreshMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="Type @name, just the name, or paste the address of your TikTok page. Leave it blank and the name of whoever is hosting the live room is used instead." />
+
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Padding="8"
+                                Background="{StaticResource SurfaceCardBrush}"
+                                CornerRadius="5">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontFamily="{StaticResource FontPrimary}"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        FontWeight="Medium"
+                                        Foreground="{StaticResource AccentTealBrush}"
+                                        Text="{Binding Modules.TikTokLive.FollowerCountDisplay, StringFormat='Followers: {0}', FallbackValue='Followers: -'}" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontFamily="{StaticResource FontPrimary}"
+                                        FontSize="{StaticResource FontSizeMicro}"
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Text="{Binding Modules.TikTokLive.ProfileStatusText, FallbackValue='Set a TikTok profile username.'}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                            <Border
+                                Grid.Column="2"
+                                Padding="8"
+                                Background="{StaticResource SurfaceCardBrush}"
+                                CornerRadius="5">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontFamily="{StaticResource FontPrimary}"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        Foreground="{StaticResource AccentLightPurpleBrush}"
+                                        Text="Live right now" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontFamily="{StaticResource FontPrimary}"
+                                        FontSize="{StaticResource FontSizeMicro}"
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Text="{Binding Modules.TikTokLive.ProfilePreview, FallbackValue='No profile output yet.'}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock
+                            Margin="0,10,0,0"
+                            Style="{StaticResource OptionFieldLabelStyle}"
+                            Text="How that line reads" />
+                        <TextBox
+                            Width="520"
+                            Margin="0,3,0,0"
+                            Padding="5,4,5,4"
+                            HorizontalAlignment="Left"
+                            FontSize="{StaticResource FontSizeCompact}"
+                            Text="{Binding TikTokSettings.ProfileTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock
+                            Margin="0,2,0,0"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="Type these where you want that piece to appear — {profile} your @name · {display_name} your display name · {followers} the follower count · {follower_count} the same number, never shortened · {updated} the time of the last check"
+                            TextWrapping="Wrap" />
+                        <controls:SegmentPreview Caption="The follower line on its own" Line="{Binding ProfileSamplePreview}" />
+
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="When your follower count goes up" />
+                        <TextBlock
+                            Margin="0,0,0,6"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="MagicChatbox compares each check with the one before it. TikTok does not say who the new follower was, so the message can only report how many you gained."
+                            TextWrapping="Wrap" />
+                        <CheckBox IsChecked="{Binding TikTokSettings.ShowProfileFollowerChangeEvents, Mode=TwoWay}">
+                            Say something when I gain followers
+                        </CheckBox>
+                        <StackPanel Margin="20,4,0,0" Visibility="{Binding TikTokSettings.ShowProfileFollowerChangeEvents, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBlock
+                                Style="{StaticResource OptionHelpTextStyle}"
+                                Text="Type these where you want that piece to appear — {change} how many you just gained · {followers} your new total · {follower_count} the same total, never shortened · {profile} your @name · {display_name} your display name · {change_count} the gain, never shortened · {updated} the time of the check"
+                                TextWrapping="Wrap" />
+                            <TextBox
+                                Width="520"
+                                Margin="0,3,0,0"
+                                Padding="5,4,5,4"
+                                HorizontalAlignment="Left"
+                                FontSize="{StaticResource FontSizeCompact}"
+                                Text="{Binding TikTokSettings.ProfileFollowerChangeTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="{StaticResource FontSizeCaption}"
+                                    Foreground="{StaticResource TextBodyBrush}"
+                                    Text="Keep it on screen for" />
+                                <TextBox
+                                    Width="60"
+                                    Margin="6,0,0,0"
+                                    Padding="5,0,0,0"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeSecondary}"
+                                    Text="{Binding TikTokSettings.ProfileFollowerChangeDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock
+                                    Margin="6,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="{StaticResource FontSizeCaption}"
+                                    Foreground="{StaticResource TextBodyBrush}"
+                                    Text="seconds." />
+                            </StackPanel>
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="{StaticResource FontSizeCaption}"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="{Binding Modules.TikTokLive.ProfileEventDisplay, StringFormat='Last one shown: {0}', FallbackValue='Last one shown: -'}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,0,0,10" Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Showing your follower count and your live room together" />
+                        <TextBlock
+                            Margin="0,2,0,8"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="When both have something to say you can put them on one line. Turn this off and the live room takes over the whole line while you are streaming."
+                            TextWrapping="Wrap" />
+                        <CheckBox IsChecked="{Binding TikTokSettings.CombineProfileAndLive, Mode=TwoWay}">
+                            Show both on one line
+                        </CheckBox>
+                        <StackPanel Margin="20,6,0,0" Visibility="{Binding TikTokSettings.CombineProfileAndLive, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Which one comes first" />
+                                    <ComboBox
+                                        Width="190"
+                                        Margin="0,3,0,0"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        ItemsSource="{Binding OutputOrders}"
+                                        SelectedItem="{Binding TikTokSettings.OutputOrder, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Margin="12,0,0,0">
+                                    <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="What goes between them" />
+                                    <TextBox
+                                        Width="110"
+                                        Margin="0,3,0,0"
+                                        Padding="5,0,0,0"
+                                        VerticalContentAlignment="Center"
+                                        FontSize="{StaticResource FontSizeCompact}"
+                                        Text="{Binding TikTokSettings.CombinedOutputSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <TextBlock
+                                Margin="0,6,0,0"
+                                Style="{StaticResource OptionHelpTextStyle}"
+                                Text="Type \n to start a new line instead. If one half has nothing to say it is skipped, so you never see the separator on its own." />
+                        </StackPanel>
+                        <TextBlock
+                            Margin="0,8,0,0"
+                            FontSize="{StaticResource FontSizeCaption}"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="{Binding Modules.TikTokLive.OutputPreview, StringFormat='In the chatbox right now: {0}', FallbackValue='In the chatbox right now: -'}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,0,0,10" Style="{StaticResource OptionCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Your live room" />
+                        <TextBlock
+                            Margin="0,2,0,8"
+                            Style="{StaticResource OptionHelpTextStyle}"
+                            Text="Separate from the follower count above. Turn this on only when you want MagicChatbox to join your live room and watch for viewers, likes, comments and gifts."
+                            TextWrapping="Wrap" />
+                        <CheckBox IsChecked="{Binding TikTokSettings.EnableLiveConnector, Mode=TwoWay}">
+                            Connect to my live room
+                        </CheckBox>
+
+                        <StackPanel Margin="0,8,0,0" Visibility="{Binding TikTokSettings.EnableLiveConnector, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Border
+                                Margin="0,0,0,10"
+                                BorderBrush="#735A41"
+                                BorderThickness="1"
+                                CornerRadius="5"
+                                Style="{StaticResource OptionCardStyle}">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontFamily="{StaticResource FontPrimary}"
+                                        FontSize="{StaticResource FontSizeSecondary}"
+                                        Foreground="{StaticResource StatusWarningBrush}"
+                                        Text="Still being tested. This uses a way into live rooms that TikTok does not officially offer, so it can stop working without warning. No TikTok password is asked for or stored — only your public name is used."
+                                        TextWrapping="Wrap" />
+                                    <CheckBox Margin="0,10,0,0" IsChecked="{Binding TikTokSettings.ExperimentalEnabled, Mode=TwoWay}">
+                                        I understand this may break at any time
+                                    </CheckBox>
+                                </StackPanel>
+                            </Border>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock
+                                        FontSize="{StaticResource FontSizeSecondary}"
+                                        Foreground="{StaticResource TextBodyBrush}"
+                                        Text="{Binding Modules.TikTokLive.StatusText, FallbackValue='Not connected to a live room.'}" />
+                                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                        <TextBlock
+                                            FontSize="{StaticResource FontSizeCaption}"
+                                            Foreground="{StaticResource TextLabelBrush}"
+                                            Text="{Binding Modules.TikTokLive.HostDisplay, StringFormat='Host: {0}', FallbackValue='Host: -'}" />
+                                        <TextBlock
+                                            Margin="12,0,0,0"
+                                            FontSize="{StaticResource FontSizeCaption}"
+                                            Foreground="{StaticResource TextLabelBrush}"
+                                            Text="{Binding Modules.TikTokLive.ViewerCountDisplay, StringFormat='Viewers: {0}', FallbackValue='Viewers: 0'}" />
+                                        <TextBlock
+                                            Margin="12,0,0,0"
+                                            FontSize="{StaticResource FontSizeCaption}"
+                                            Foreground="{StaticResource TextLabelBrush}"
+                                            Text="{Binding Modules.TikTokLive.LikeCountDisplay, StringFormat='Likes: {0}', FallbackValue='Likes: 0'}" />
+                                    </StackPanel>
+                                    <TextBlock
+                                        Margin="0,6,0,0"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        Foreground="{StaticResource TextMutedBrush}"
+                                        Text="{Binding Modules.TikTokLive.LastEventDisplay, StringFormat='Last thing that happened: {0}', FallbackValue='Last thing that happened: -'}"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button
+                                        Width="auto"
+                                        Height="26"
+                                        Padding="8,3"
+                                        Command="{Binding StartCommand}"
+                                        Content="Connect"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        Style="{StaticResource Status_Button_style}"
+                                        Visibility="{Binding Modules.TikTokLive.IsRunning, Converter={StaticResource InverseBoolToVisibilityConverter}, FallbackValue=Visible}" />
+                                    <Button
+                                        Width="auto"
+                                        Height="26"
+                                        Margin="6,0,0,0"
+                                        Padding="8,3"
+                                        Command="{Binding StopCommand}"
+                                        Content="Disconnect"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        Style="{StaticResource Status_Button_style}"
+                                        Visibility="{Binding Modules.TikTokLive.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Name of the live room host" />
+                                    <TextBox
+                                        Width="220"
+                                        Margin="0,3,0,0"
+                                        Padding="5,0,0,0"
+                                        VerticalContentAlignment="Center"
+                                        FontSize="{StaticResource FontSizeBody}"
+                                        Text="{Binding TikTokSettings.HostUserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Margin="12,0,0,0">
+                                    <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Give up after (seconds)" />
+                                    <TextBox
+                                        Width="70"
+                                        Margin="0,3,0,0"
+                                        Padding="5,0,0,0"
+                                        VerticalContentAlignment="Center"
+                                        FontSize="{StaticResource FontSizeBody}"
+                                        Text="{Binding TikTokSettings.ConnectionTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Margin="12,0,0,0">
+                                    <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Try again after (seconds)" />
+                                    <TextBox
+                                        Width="70"
+                                        Margin="0,3,0,0"
+                                        Padding="5,0,0,0"
+                                        VerticalContentAlignment="Center"
+                                        FontSize="{StaticResource FontSizeBody}"
+                                        Text="{Binding TikTokSettings.ReconnectDelaySeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource OptionHelpTextStyle}"
+                                Text="Leave the host name blank and your own TikTok name from above is used." />
+                            <CheckBox Margin="0,6,0,0" IsChecked="{Binding TikTokSettings.AutoConnectOnStartup, Mode=TwoWay}">
+                                Connect to the live room as soon as MagicChatbox starts
+                            </CheckBox>
+
+                            <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="What the live room puts in the chatbox" />
+                            <ComboBox
+                                Width="200"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Left"
+                                FontSize="{StaticResource FontSizeCaption}"
+                                ItemsSource="{Binding DisplayModes}"
+                                SelectedItem="{Binding TikTokSettings.DisplayMode, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock
+                                Margin="0,0,0,6"
+                                Style="{StaticResource OptionHelpTextStyle}"
+                                Text="This can sit beside your follower count or replace it — that is decided by the 'showing both together' switch further up." />
+                            <CheckBox IsChecked="{Binding TikTokSettings.CompactViewerCount, Mode=TwoWay}">Shorten big viewer and follower numbers — 12300 becomes 12.3ᵏ</CheckBox>
+                            <CheckBox IsChecked="{Binding TikTokSettings.CompactLikeCount, Mode=TwoWay}">Shorten the like count — 15600 becomes 15.6ᵏ</CheckBox>
+
+                            <TextBlock
+                                Margin="0,8,0,0"
+                                Style="{StaticResource OptionFieldLabelStyle}"
+                                Text="How the live room line reads" />
+                            <TextBox
+                                Width="520"
+                                Margin="0,3,0,0"
+                                Padding="5,4,5,4"
+                                HorizontalAlignment="Left"
+                                FontSize="{StaticResource FontSizeCompact}"
+                                Text="{Binding TikTokSettings.SummaryTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource OptionHelpTextStyle}"
+                                Text="Type these where you want that piece to appear — {live} the word LIVE · {host} the host name · {viewers} how many are watching · {viewer_count} the same number, never shortened · {likes} the like total · {like_count} the same total, never shortened · {room} the room number"
+                                TextWrapping="Wrap" />
+                            <controls:SegmentPreview Caption="The live room line on its own" Line="{Binding LiveSamplePreview}" />
+                            <TextBlock
+                                Margin="0,6,0,0"
+                                FontSize="{StaticResource FontSizeCaption}"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                Text="{Binding Modules.TikTokLive.OutputPreview, StringFormat='In the chatbox right now: {0}', FallbackValue='In the chatbox right now: -'}"
+                                TextWrapping="Wrap" />
+
+                            <TextBlock Style="{StaticResource OptionSubsectionHeaderStyle}" Text="Messages that pop up for a few seconds" />
+                            <TextBlock
+                                Style="{StaticResource OptionHelpTextStyle}"
+                                Text="These briefly take over the TikTok part of the chatbox when something happens, then it goes back to the line above."
+                                TextWrapping="Wrap" />
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="How long each one stays (seconds)" />
+                                <TextBox
+                                    Width="70"
+                                    Margin="0,3,0,0"
+                                    Padding="5,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalContentAlignment="Center"
+                                    FontSize="{StaticResource FontSizeBody}"
+                                    Text="{Binding TikTokSettings.EventDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding TikTokSettings.ShowFollowEvents, Mode=TwoWay}">Say when someone follows you</CheckBox>
+                            <StackPanel Margin="20,4,0,8" Visibility="{Binding TikTokSettings.ShowFollowEvents, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Type these where you want that piece to appear — {user} their name · {unique_id} their @name · {host} the host name" />
+                                <TextBox
+                                    Width="420"
+                                    Margin="0,3,0,0"
+                                    Padding="5,4,5,4"
+                                    HorizontalAlignment="Left"
+                                    FontSize="{StaticResource FontSizeCompact}"
+                                    Text="{Binding TikTokSettings.FollowTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding TikTokSettings.ShowCommentEvents, Mode=TwoWay}">Show comments from the live room</CheckBox>
+                            <StackPanel Margin="20,4,0,8" Visibility="{Binding TikTokSettings.ShowCommentEvents, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Type these where you want that piece to appear — {user} their name · {unique_id} their @name · {message} what they said · {host} the host name" />
+                                <TextBox
+                                    Width="420"
+                                    Margin="0,3,0,0"
+                                    Padding="5,4,5,4"
+                                    HorizontalAlignment="Left"
+                                    FontSize="{StaticResource FontSizeCompact}"
+                                    Text="{Binding TikTokSettings.CommentTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <controls:SegmentPreview Caption="A comment as it would appear" Line="{Binding CommentSamplePreview}" />
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding TikTokSettings.ShowGiftEvents, Mode=TwoWay}">Say when someone sends a gift</CheckBox>
+                            <StackPanel Margin="20,4,0,8" Visibility="{Binding TikTokSettings.ShowGiftEvents, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Type these where you want that piece to appear — {user} their name · {unique_id} their @name · {gift} what they sent · {count} how many · {amount} what it was worth · {host} the host name" />
+                                <TextBox
+                                    Width="420"
+                                    Margin="0,3,0,0"
+                                    Padding="5,4,5,4"
+                                    HorizontalAlignment="Left"
+                                    FontSize="{StaticResource FontSizeCompact}"
+                                    Text="{Binding TikTokSettings.GiftTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding TikTokSettings.ShowLikeEvents, Mode=TwoWay}">Say when the likes come in fast</CheckBox>
+                            <StackPanel Margin="20,4,0,8" Visibility="{Binding TikTokSettings.ShowLikeEvents, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Type these where you want that piece to appear — {user} their name · {unique_id} their @name · {count} how many they just sent · {total} the running total · {host} the host name" />
+                                <TextBox
+                                    Width="420"
+                                    Margin="0,3,0,0"
+                                    Padding="5,4,5,4"
+                                    HorizontalAlignment="Left"
+                                    FontSize="{StaticResource FontSizeCompact}"
+                                    Text="{Binding TikTokSettings.LikeTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        Foreground="{StaticResource TextBodyBrush}"
+                                        Text="Only when someone sends at least" />
+                                    <TextBox
+                                        Width="60"
+                                        Margin="6,0,0,0"
+                                        Padding="5,0,0,0"
+                                        VerticalContentAlignment="Center"
+                                        FontSize="{StaticResource FontSizeSecondary}"
+                                        Text="{Binding TikTokSettings.LikeBurstThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="{StaticResource FontSizeCaption}"
+                                        Foreground="{StaticResource TextBodyBrush}"
+                                        Text="likes at once." />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding TikTokSettings.ShowViewerMilestones, Mode=TwoWay}">Say when the viewer count hits a round number</CheckBox>
+                            <StackPanel Margin="20,4,0,0" Visibility="{Binding TikTokSettings.ShowViewerMilestones, Converter={StaticResource BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBlock Style="{StaticResource OptionHelpTextStyle}" Text="Type these where you want that piece to appear — {viewers} how many are watching · {viewer_count} the same number, never shortened · {host} the host name" />
+                                <TextBox
+                                    Width="420"
+                                    Margin="0,3,0,0"
+                                    Padding="5,4,5,4"
+                                    HorizontalAlignment="Left"
+                                    FontSize="{StaticResource FontSizeCompact}"
+                                    Text="{Binding TikTokSettings.ViewerMilestoneTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Every this many viewers" />
+                                        <TextBox
+                                            Width="70"
+                                            Margin="0,3,0,0"
+                                            Padding="5,0,0,0"
+                                            VerticalContentAlignment="Center"
+                                            FontSize="{StaticResource FontSizeSecondary}"
+                                            Text="{Binding TikTokSettings.ViewerCountMilestoneStep, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <StackPanel Margin="12,0,0,0">
+                                        <TextBlock Style="{StaticResource OptionFieldLabelStyle}" Text="Keep it on screen for (seconds)" />
+                                        <TextBox
+                                            Width="70"
+                                            Margin="0,3,0,0"
+                                            Padding="5,0,0,0"
+                                            VerticalContentAlignment="Center"
+                                            FontSize="{StaticResource FontSizeSecondary}"
+                                            Text="{Binding TikTokSettings.ViewerMilestoneDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

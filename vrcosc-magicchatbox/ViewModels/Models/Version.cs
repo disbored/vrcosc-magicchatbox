@@ -16,7 +16,7 @@ namespace vrcosc_magicchatbox.ViewModels.Models
 
         public string ReleaseNotes { get; set; }
 
-        private string _versionNumber;
+        private string _versionNumber = string.Empty;
 
         public string VersionNumber
         {
@@ -26,27 +26,29 @@ namespace vrcosc_magicchatbox.ViewModels.Models
 
         private string EnsureCorrectFormat(string version)
         {
-            var parts = version.Split('.');
+            var parts = (version ?? string.Empty).Split('.');
 
-            // Ensure we only process the first three parts (major, minor, build)
             if (parts.Length > 3)
             {
-                // Ignore the revision part (typically the 4th part)
                 parts = parts.Take(3).ToArray();
             }
 
             if (parts.Length < 3)
             {
-                // If parts are less than 3, pad missing parts with zeros
                 Array.Resize(ref parts, 3);
             }
 
-            parts[0] = "0"; // Always set the first part to 0
-            parts[1] = int.Parse(parts[1]).ToString(); // Ensure the middle part is an integer
-            parts[2] = int.Parse(parts[2]).ToString().PadLeft(3, '0'); // Ensure the last part is three digits, padding with zeros if necessary
+            // A tag is not obliged to carry three segments, and one that does not used to take
+            // the version check down with it rather than reading as the zero it means.
+            parts[0] = "0";
+            parts[1] = SegmentOrZero(parts[1]).ToString();
+            parts[2] = SegmentOrZero(parts[2]).ToString().PadLeft(3, '0');
 
             return string.Join(".", parts);
         }
+
+        private static int SegmentOrZero(string segment)
+            => int.TryParse(segment, out int value) ? value : 0;
 
     }
 }
